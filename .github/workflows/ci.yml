@@ -38,7 +38,7 @@ jobs:
       #   run: pylint --rcfile=.pylintrc --exit-zero segment/analytics
 
       - name: Run flake8
-        run: pylint --rcfile=.pylintrc segment/analytics
+        run: flake8 --max-complexity=10 --statistics segment/analytics
 
       - name: Run unittests
         run: python -m unittest segment.analytics.test.all
