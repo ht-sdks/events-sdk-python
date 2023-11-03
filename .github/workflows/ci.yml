@@ -1,0 +1,44 @@
+name: Run CI (pylint, flake8, unittests)
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - "**.md"
+  pull_request:
+    paths-ignore:
+      - "**.md"
+
+jobs:
+  test-python:
+    name: Test python
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.9]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install depenedencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[test]
+          python -m pip install -r requirements.txt
+
+      - name: Run pylint
+        run: pylint --rcfile=.pylintrc segment/analytics
+
+      - name: Run flake8
+        run: pylint --rcfile=.pylintrc segment/analytics
+
+      - name: Run unittests
+        run: python -m unittest segment.analytics.test.all

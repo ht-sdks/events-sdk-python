@@ -4,8 +4,8 @@ FROM python:3.10
 
 COPY . .
 
-# RUN python -m pip install --upgrade pip
-RUN pip3 install -e .[test]
-RUN pip3 install -r requirements.txt
+RUN python -m pip install --upgrade pip
+RUN python -m pip install -e .[test]
+RUN python -m pip install -r requirements.txt
 
 CMD python
