@@ -1,6 +1,6 @@
 aiohttp==3.7.4.post0
 appdirs==1.4.4
-astroid==1.6.6
+astroid==2.5.4
 async-timeout==3.0.1
 attrs==23.1.0
 backoff==1.10.0
@@ -52,7 +52,7 @@ pycodestyle==2.5.0
 pyflakes==2.1.1
 Pygments==2.16.1
 PyJWT==2.8.0
-pylint==1.9.3
+pylint==2.8.0
 pyparsing==3.1.1
 python-dateutil==2.8.2
 readme-renderer==32.0
