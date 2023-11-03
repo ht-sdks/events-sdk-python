@@ -34,8 +34,8 @@ jobs:
           python -m pip install -e .[test]
           python -m pip install -r requirements.txt
 
-      - name: Run pylint
-        run: pylint --rcfile=.pylintrc segment/analytics
+      # - name: Run pylint
+      #   run: pylint --rcfile=.pylintrc --exit-zero segment/analytics
 
       - name: Run flake8
         run: pylint --rcfile=.pylintrc segment/analytics
