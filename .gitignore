@@ -10,3 +10,5 @@ build
 .vscode/
 .idea/
 .python-version
+flake8.out
+pylint.out
