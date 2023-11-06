@@ -1,14 +1,14 @@
-from datetime import date, datetime
-import unittest
 import time
+import unittest
+from datetime import date, datetime
+
 import mock
 
-from segment.analytics.version import VERSION
 from segment.analytics.client import Client
+from segment.analytics.version import VERSION
 
 
 class TestClient(unittest.TestCase):
-
     def fail(self, e, batch=[]):
         """Mark the failure handler"""
         self.failed = True
@@ -42,7 +42,8 @@ class TestClient(unittest.TestCase):
         # node -e "console.log(157963456373623802 + 1)" > 157963456373623800
         client = self.client
         success, msg = client.track(
-            user_id=157963456373623802, event='python test event')
+            user_id=157963456373623802, event='python test event'
+        )
         client.flush()
         self.assertTrue(success)
         self.assertFalse(self.failed)
@@ -55,7 +56,8 @@ class TestClient(unittest.TestCase):
         # node -e "console.log(157963456373623803 + 1)" > 157963456373623800
         client = self.client
         success, msg = client.track(
-            anonymous_id=157963456373623803, event='python test event')
+            anonymous_id=157963456373623803, event='python test event'
+        )
         client.flush()
         self.assertTrue(success)
         self.assertFalse(self.failed)
@@ -66,9 +68,15 @@ class TestClient(unittest.TestCase):
     def test_advanced_track(self):
         client = self.client
         success, msg = client.track(
-            'userId', 'python test event', {'property': 'value'},
-            {'ip': '192.168.0.1'}, datetime(2014, 9, 3), 'anonymousId',
-            {'Amplitude': True}, 'messageId')
+            'userId',
+            'python test event',
+            {'property': 'value'},
+            {'ip': '192.168.0.1'},
+            datetime(2014, 9, 3),
+            'anonymousId',
+            {'Amplitude': True},
+            'messageId',
+        )
 
         self.assertTrue(success)
 
@@ -78,10 +86,9 @@ class TestClient(unittest.TestCase):
         self.assertEqual(msg['context']['ip'], '192.168.0.1')
         self.assertEqual(msg['event'], 'python test event')
         self.assertEqual(msg['anonymousId'], 'anonymousId')
-        self.assertEqual(msg['context']['library'], {
-            'name': 'analytics-python',
-            'version': VERSION
-        })
+        self.assertEqual(
+            msg['context']['library'], {'name': 'analytics-python', 'version': VERSION}
+        )
         self.assertEqual(msg['messageId'], 'messageId')
         self.assertEqual(msg['userId'], 'userId')
         self.assertEqual(msg['type'], 'track')
@@ -102,9 +109,14 @@ class TestClient(unittest.TestCase):
     def test_advanced_identify(self):
         client = self.client
         success, msg = client.identify(
-            'userId', {'trait': 'value'}, {'ip': '192.168.0.1'},
-            datetime(2014, 9, 3), 'anonymousId', {'Amplitude': True},
-            'messageId')
+            'userId',
+            {'trait': 'value'},
+            {'ip': '192.168.0.1'},
+            datetime(2014, 9, 3),
+            'anonymousId',
+            {'Amplitude': True},
+            'messageId',
+        )
 
         self.assertTrue(success)
 
@@ -113,10 +125,9 @@ class TestClient(unittest.TestCase):
         self.assertEqual(msg['context']['ip'], '192.168.0.1')
         self.assertEqual(msg['traits'], {'trait': 'value'})
         self.assertEqual(msg['anonymousId'], 'anonymousId')
-        self.assertEqual(msg['context']['library'], {
-            'name': 'analytics-python',
-            'version': VERSION
-        })
+        self.assertEqual(
+            msg['context']['library'], {'name': 'analytics-python', 'version': VERSION}
+        )
         self.assertTrue(isinstance(msg['timestamp'], str))
         self.assertEqual(msg['messageId'], 'messageId')
         self.assertEqual(msg['userId'], 'userId')
@@ -136,9 +147,15 @@ class TestClient(unittest.TestCase):
     def test_advanced_group(self):
         client = self.client
         success, msg = client.group(
-            'userId', 'groupId', {'trait': 'value'}, {'ip': '192.168.0.1'},
-            datetime(2014, 9, 3), 'anonymousId', {'Amplitude': True},
-            'messageId')
+            'userId',
+            'groupId',
+            {'trait': 'value'},
+            {'ip': '192.168.0.1'},
+            datetime(2014, 9, 3),
+            'anonymousId',
+            {'Amplitude': True},
+            'messageId',
+        )
 
         self.assertTrue(success)
 
@@ -147,10 +164,9 @@ class TestClient(unittest.TestCase):
         self.assertEqual(msg['context']['ip'], '192.168.0.1')
         self.assertEqual(msg['traits'], {'trait': 'value'})
         self.assertEqual(msg['anonymousId'], 'anonymousId')
-        self.assertEqual(msg['context']['library'], {
-            'name': 'analytics-python',
-            'version': VERSION
-        })
+        self.assertEqual(
+            msg['context']['library'], {'name': 'analytics-python', 'version': VERSION}
+        )
         self.assertTrue(isinstance(msg['timestamp'], str))
         self.assertEqual(msg['messageId'], 'messageId')
         self.assertEqual(msg['userId'], 'userId')
@@ -178,9 +194,16 @@ class TestClient(unittest.TestCase):
     def test_advanced_page(self):
         client = self.client
         success, msg = client.page(
-            'userId', 'category', 'name', {'property': 'value'},
-            {'ip': '192.168.0.1'}, datetime(2014, 9, 3), 'anonymousId',
-            {'Amplitude': True}, 'messageId')
+            'userId',
+            'category',
+            'name',
+            {'property': 'value'},
+            {'ip': '192.168.0.1'},
+            datetime(2014, 9, 3),
+            'anonymousId',
+            {'Amplitude': True},
+            'messageId',
+        )
 
         self.assertTrue(success)
 
@@ -189,10 +212,9 @@ class TestClient(unittest.TestCase):
         self.assertEqual(msg['context']['ip'], '192.168.0.1')
         self.assertEqual(msg['properties'], {'property': 'value'})
         self.assertEqual(msg['anonymousId'], 'anonymousId')
-        self.assertEqual(msg['context']['library'], {
-            'name': 'analytics-python',
-            'version': VERSION
-        })
+        self.assertEqual(
+            msg['context']['library'], {'name': 'analytics-python', 'version': VERSION}
+        )
         self.assertEqual(msg['category'], 'category')
         self.assertTrue(isinstance(msg['timestamp'], str))
         self.assertEqual(msg['messageId'], 'messageId')
@@ -212,9 +234,16 @@ class TestClient(unittest.TestCase):
     def test_advanced_screen(self):
         client = self.client
         success, msg = client.screen(
-            'userId', 'category', 'name', {'property': 'value'},
-            {'ip': '192.168.0.1'}, datetime(2014, 9, 3), 'anonymousId',
-            {'Amplitude': True}, 'messageId')
+            'userId',
+            'category',
+            'name',
+            {'property': 'value'},
+            {'ip': '192.168.0.1'},
+            datetime(2014, 9, 3),
+            'anonymousId',
+            {'Amplitude': True},
+            'messageId',
+        )
 
         self.assertTrue(success)
 
@@ -223,10 +252,9 @@ class TestClient(unittest.TestCase):
         self.assertEqual(msg['context']['ip'], '192.168.0.1')
         self.assertEqual(msg['properties'], {'property': 'value'})
         self.assertEqual(msg['anonymousId'], 'anonymousId')
-        self.assertEqual(msg['context']['library'], {
-            'name': 'analytics-python',
-            'version': VERSION
-        })
+        self.assertEqual(
+            msg['context']['library'], {'name': 'analytics-python', 'version': VERSION}
+        )
         self.assertTrue(isinstance(msg['timestamp'], str))
         self.assertEqual(msg['messageId'], 'messageId')
         self.assertEqual(msg['category'], 'category')
@@ -294,7 +322,7 @@ class TestClient(unittest.TestCase):
 
     def test_debug(self):
         Client('bad_key', debug=True)
-        self.client.log.setLevel(0) # reset log level after debug enable
+        self.client.log.setLevel(0)  # reset log level after debug enable
 
     def test_identify_with_date_object(self):
         client = self.client
@@ -318,16 +346,18 @@ class TestClient(unittest.TestCase):
         self.assertFalse(self.failed)
 
     def test_user_defined_upload_size(self):
-        client = Client('testsecret', on_error=self.fail,
-                        upload_size=10, upload_interval=3)
+        client = Client(
+            'testsecret', on_error=self.fail, upload_size=10, upload_interval=3
+        )
 
         def mock_post_fn(*args, **kwargs):
             self.assertEqual(len(kwargs['batch']), 10)
 
         # the post function should be called 2 times, with a batch size of 10
         # each time.
-        with mock.patch('segment.analytics.consumer.post', side_effect=mock_post_fn) \
-                as mock_post:
+        with mock.patch(
+            'segment.analytics.consumer.post', side_effect=mock_post_fn
+        ) as mock_post:
             for _ in range(20):
                 client.identify('userId', {'trait': 'value'})
             time.sleep(1)

@@ -17,7 +17,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.9]
+        python-version: [3.9, 3.11]
 
     steps:
       - name: Checkout
@@ -33,13 +33,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .[test]
 
-      # currently exits with error code 30 (too many existing errors?)
-      # - name: Run pylint
-      #   run: pylint --rcfile=.pylintrc --exit-zero segment/analytics
-
-      # currently exits with error code 1 (too many existing errors?)
-      # - name: Run flake8
-      #   run: flake8 --max-complexity=10 --statistics segment/analytics
+      - name: Run ruff linting
+        run: |
+          python -m ruff check segment/analytics/
+          python -m ruff --diff format segment/analytics/
 
       - name: Run unittests
         run: python -m unittest segment.analytics.test.all

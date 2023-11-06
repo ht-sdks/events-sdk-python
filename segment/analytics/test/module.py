@@ -4,7 +4,6 @@ import segment.analytics as analytics
 
 
 class TestModule(unittest.TestCase):
-
     # def failed(self):
     #     self.failed = True
 

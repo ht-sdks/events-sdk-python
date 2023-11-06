@@ -1,6 +1,6 @@
+import unittest
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-import unittest
 
 from dateutil.tz import tzutc
 
@@ -8,7 +8,6 @@ from segment.analytics import utils
 
 
 class TestUtils(unittest.TestCase):
-
     def test_timezone_utils(self):
         now = datetime.now()
         utcnow = datetime.now(tz=tzutc())
@@ -31,13 +30,13 @@ class TestUtils(unittest.TestCase):
             'float': 2.0,
             'bool': True,
             'str': 'woo',
-            'none': None
+            'none': None,
         }
 
         complicated = {
             'exception': Exception('This should show up'),
             'timedelta': timedelta(microseconds=20),
-            'list': [1, 2, 3]
+            'list': [1, 2, 3],
         }
 
         combined = dict(simple.items())
@@ -67,7 +66,9 @@ class TestUtils(unittest.TestCase):
             self.assertEqual(cleaned['fn'], None)
 
     def test_remove_slash(self):
-        self.assertEqual('http://segment.io',
-                         utils.remove_trailing_slash('http://segment.io/'))
-        self.assertEqual('http://segment.io',
-                         utils.remove_trailing_slash('http://segment.io'))
+        self.assertEqual(
+            'http://segment.io', utils.remove_trailing_slash('http://segment.io/')
+        )
+        self.assertEqual(
+            'http://segment.io', utils.remove_trailing_slash('http://segment.io')
+        )

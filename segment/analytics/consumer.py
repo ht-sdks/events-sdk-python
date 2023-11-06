@@ -1,12 +1,12 @@
+import json
 import logging
 import time
-from threading import Thread
-import backoff
-import json
-
-from segment.analytics.request import post, APIError, DatetimeSerializer
-
 from queue import Empty
+from threading import Thread
+
+import backoff
+
+from segment.analytics.request import APIError, DatetimeSerializer, post
 
 MAX_MSG_SIZE = 32 << 10
 
@@ -14,21 +14,35 @@ MAX_MSG_SIZE = 32 << 10
 # lower to leave space for extra data that will be added later, eg. "sentAt".
 BATCH_SIZE_LIMIT = 475000
 
+
 class FatalError(Exception):
     def __init__(self, message):
         self.message = message
+
     def __str__(self):
-        msg = "[Segment] {0})"
+        msg = '[Segment] {0})'
         return msg.format(self.message)
 
 
 class Consumer(Thread):
     """Consumes the messages from the client's queue."""
+
     log = logging.getLogger('segment')
 
-    def __init__(self, queue, write_key, upload_size=100, host=None,
-                 on_error=None, upload_interval=0.5, gzip=False, retries=10,
-                 timeout=15, proxies=None, oauth_manager=None):
+    def __init__(
+        self,
+        queue,
+        write_key,
+        upload_size=100,
+        host=None,
+        on_error=None,
+        upload_interval=0.5,
+        gzip=False,
+        retries=10,
+        timeout=15,
+        proxies=None,
+        oauth_manager=None,
+    ):
         """Create a consumer thread."""
         Thread.__init__(self)
         # Make consumer a daemon thread so that it doesn't block program exit
@@ -96,19 +110,15 @@ class Consumer(Thread):
             if elapsed >= self.upload_interval:
                 break
             try:
-                item = queue.get(
-                    block=True, timeout=self.upload_interval - elapsed)
-                item_size = len(json.dumps(
-                    item, cls=DatetimeSerializer).encode())
+                item = queue.get(block=True, timeout=self.upload_interval - elapsed)
+                item_size = len(json.dumps(item, cls=DatetimeSerializer).encode())
                 if item_size > MAX_MSG_SIZE:
-                    self.log.error(
-                        'Item exceeds 32kb limit, dropping. (%s)', str(item))
+                    self.log.error('Item exceeds 32kb limit, dropping. (%s)', str(item))
                     continue
                 items.append(item)
                 total_size += item_size
                 if total_size >= BATCH_SIZE_LIMIT:
-                    self.log.debug(
-                        'hit batch size limit (size: %d)', total_size)
+                    self.log.debug('hit batch size limit (size: %d)', total_size)
                     break
             except Empty:
                 break
@@ -118,7 +128,7 @@ class Consumer(Thread):
         return items
 
     def request(self, batch):
-        """Attempt to upload the batch and retry before raising an error """
+        """Attempt to upload the batch and retry before raising an error"""
 
         def fatal_exception(exc):
             if isinstance(exc, APIError):
@@ -133,13 +143,17 @@ class Consumer(Thread):
                 return False
 
         @backoff.on_exception(
-            backoff.expo,
-            Exception,
-            max_tries=self.retries + 1,
-            giveup=fatal_exception)
+            backoff.expo, Exception, max_tries=self.retries + 1, giveup=fatal_exception
+        )
         def send_request():
-            post(self.write_key, self.host, gzip=self.gzip,
-                 timeout=self.timeout, batch=batch, proxies=self.proxies,
-                 oauth_manager=self.oauth_manager)
+            post(
+                self.write_key,
+                self.host,
+                gzip=self.gzip,
+                timeout=self.timeout,
+                batch=batch,
+                proxies=self.proxies,
+                oauth_manager=self.oauth_manager,
+            )
 
         send_request()

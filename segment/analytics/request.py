@@ -1,25 +1,33 @@
-from datetime import date, datetime
-from io import BytesIO
-from gzip import GzipFile
-import logging
 import json
+import logging
+from datetime import date, datetime
+from gzip import GzipFile
+from io import BytesIO
+
 from dateutil.tz import tzutc
-from requests.auth import HTTPBasicAuth
 from requests import sessions
 
-from segment.analytics.version import VERSION
 from segment.analytics.utils import remove_trailing_slash
+from segment.analytics.version import VERSION
 
 _session = sessions.Session()
 
 
-def post(write_key, host=None, gzip=False, timeout=15, proxies=None, oauth_manager=None, **kwargs):
+def post(
+    write_key,
+    host=None,
+    gzip=False,
+    timeout=15,
+    proxies=None,
+    oauth_manager=None,
+    **kwargs,
+):
     """Post the `kwargs` to the API"""
     log = logging.getLogger('segment')
     body = kwargs
-    if not "sentAt" in body.keys():
-        body["sentAt"] = datetime.utcnow().replace(tzinfo=tzutc()).isoformat()
-    body["writeKey"] = write_key
+    if 'sentAt' not in body.keys():
+        body['sentAt'] = datetime.utcnow().replace(tzinfo=tzutc()).isoformat()
+    body['writeKey'] = write_key
     url = remove_trailing_slash(host or 'https://api.segment.io') + '/v1/batch'
     auth = None
     if oauth_manager:
@@ -28,7 +36,7 @@ def post(write_key, host=None, gzip=False, timeout=15, proxies=None, oauth_manag
     log.debug('making request: %s', data)
     headers = {
         'Content-Type': 'application/json',
-        'User-Agent': 'analytics-python/' + VERSION
+        'User-Agent': 'analytics-python/' + VERSION,
     }
     if auth:
         headers['Authorization'] = 'Bearer {}'.format(auth)
@@ -43,9 +51,9 @@ def post(write_key, host=None, gzip=False, timeout=15, proxies=None, oauth_manag
         data = buf.getvalue()
 
     kwargs = {
-        "data": data,
-        "headers": headers,
-        "timeout": 15,
+        'data': data,
+        'headers': headers,
+        'timeout': 15,
     }
 
     if proxies:
@@ -56,7 +64,7 @@ def post(write_key, host=None, gzip=False, timeout=15, proxies=None, oauth_manag
     except Exception as e:
         log.error(e)
         raise e
-        
+
     if res.status_code == 200:
         log.debug('data uploaded successfully')
         return res
@@ -74,14 +82,13 @@ def post(write_key, host=None, gzip=False, timeout=15, proxies=None, oauth_manag
 
 
 class APIError(Exception):
-
     def __init__(self, status, code, message):
         self.message = message
         self.status = status
         self.code = code
 
     def __str__(self):
-        msg = "[Segment] {0}: {1} ({2})"
+        msg = '[Segment] {0}: {1} ({2})'
         return msg.format(self.code, self.message, self.status)
 
 

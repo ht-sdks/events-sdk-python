@@ -29,9 +29,7 @@ tests_require = [
     "PyJWT~=2.8",
     "pyjwt[crypto]",
     "mock==2.0.0",
-    "pylint==2.17.7",
-    "flake8==3.7.9",
-    "black==23.10.1",
+    "ruff==0.1.4",
 ]
 
 setup(

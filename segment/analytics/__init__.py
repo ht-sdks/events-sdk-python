@@ -1,6 +1,5 @@
-
-from segment.analytics.version import VERSION
 from segment.analytics.client import Client
+from segment.analytics.version import VERSION
 
 __version__ = VERSION
 
@@ -77,17 +76,23 @@ def _proxy(method, *args, **kwargs):
     """Create an analytics client if one doesn't exist and send to it."""
     global default_client
     if not default_client:
-        default_client = Client(write_key, host=host, debug=debug,
-                                max_queue_size=max_queue_size,
-                                send=send, on_error=on_error,
-                                gzip=gzip, max_retries=max_retries,
-                                sync_mode=sync_mode, timeout=timeout, 
-                                oauth_client_id=oauth_client_id,
-                                oauth_client_key=oauth_client_key,
-                                oauth_key_id=oauth_key_id,
-                                oauth_auth_server=oauth_auth_server,
-                                oauth_scope=oauth_scope,
-                                )
+        default_client = Client(
+            write_key,
+            host=host,
+            debug=debug,
+            max_queue_size=max_queue_size,
+            send=send,
+            on_error=on_error,
+            gzip=gzip,
+            max_retries=max_retries,
+            sync_mode=sync_mode,
+            timeout=timeout,
+            oauth_client_id=oauth_client_id,
+            oauth_client_key=oauth_client_key,
+            oauth_key_id=oauth_key_id,
+            oauth_auth_server=oauth_auth_server,
+            oauth_scope=oauth_scope,
+        )
 
     fn = getattr(default_client, method)
     return fn(*args, **kwargs)

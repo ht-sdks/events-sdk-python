@@ -1,19 +1,18 @@
-from datetime import datetime
-from uuid import uuid4
-import logging
-import numbers
 import atexit
 import json
+import logging
+import numbers
+import queue
+from datetime import datetime
+from uuid import uuid4
 
 from dateutil.tz import tzutc
+
+from segment.analytics.consumer import MAX_MSG_SIZE, Consumer
 from segment.analytics.oauth_manager import OauthManager
-
-from segment.analytics.utils import guess_timezone, clean
-from segment.analytics.consumer import Consumer, MAX_MSG_SIZE
-from segment.analytics.request import post, DatetimeSerializer
+from segment.analytics.request import DatetimeSerializer, post
+from segment.analytics.utils import clean, guess_timezone
 from segment.analytics.version import VERSION
-
-import queue
 
 ID_TYPES = (numbers.Number, str)
 
@@ -41,31 +40,32 @@ class Client(object):
         oauth_auth_server = 'https://oauth2.segment.io'
         oauth_scope = 'tracking_api:write'
 
-
     """Create a new Segment client."""
     log = logging.getLogger('segment')
 
-    def __init__(self,
-                 write_key=DefaultConfig.write_key,
-                 host=DefaultConfig.host,
-                 debug=DefaultConfig.debug,
-                 max_queue_size=DefaultConfig.max_queue_size,
-                 send=DefaultConfig.send,
-                 on_error=DefaultConfig.on_error,
-                 gzip=DefaultConfig.gzip,
-                 max_retries=DefaultConfig.max_retries,
-                 sync_mode=DefaultConfig.sync_mode,
-                 timeout=DefaultConfig.timeout,
-                 proxies=DefaultConfig.proxies,
-                 thread=DefaultConfig.thread,
-                 upload_size=DefaultConfig.upload_size,
-                 upload_interval=DefaultConfig.upload_interval,
-                 log_handler=DefaultConfig.log_handler,
-                 oauth_client_id=DefaultConfig.oauth_client_id,
-                 oauth_client_key=DefaultConfig.oauth_client_key,
-                 oauth_key_id=DefaultConfig.oauth_key_id,
-                 oauth_auth_server=DefaultConfig.oauth_auth_server,
-                 oauth_scope=DefaultConfig.oauth_scope,):
+    def __init__(
+        self,
+        write_key=DefaultConfig.write_key,
+        host=DefaultConfig.host,
+        debug=DefaultConfig.debug,
+        max_queue_size=DefaultConfig.max_queue_size,
+        send=DefaultConfig.send,
+        on_error=DefaultConfig.on_error,
+        gzip=DefaultConfig.gzip,
+        max_retries=DefaultConfig.max_retries,
+        sync_mode=DefaultConfig.sync_mode,
+        timeout=DefaultConfig.timeout,
+        proxies=DefaultConfig.proxies,
+        thread=DefaultConfig.thread,
+        upload_size=DefaultConfig.upload_size,
+        upload_interval=DefaultConfig.upload_interval,
+        log_handler=DefaultConfig.log_handler,
+        oauth_client_id=DefaultConfig.oauth_client_id,
+        oauth_client_key=DefaultConfig.oauth_client_key,
+        oauth_key_id=DefaultConfig.oauth_key_id,
+        oauth_auth_server=DefaultConfig.oauth_auth_server,
+        oauth_scope=DefaultConfig.oauth_scope,
+    ):
         require('write_key', write_key, str)
 
         self.queue = queue.Queue(max_queue_size)
@@ -79,9 +79,16 @@ class Client(object):
         self.timeout = timeout
         self.proxies = proxies
         self.oauth_manager = None
-        if(oauth_client_id and oauth_client_key and oauth_key_id):
-            self.oauth_manager = OauthManager(oauth_client_id, oauth_client_key, oauth_key_id,
-                                              oauth_auth_server, oauth_scope, timeout, max_retries)
+        if oauth_client_id and oauth_client_key and oauth_key_id:
+            self.oauth_manager = OauthManager(
+                oauth_client_id,
+                oauth_client_key,
+                oauth_key_id,
+                oauth_auth_server,
+                oauth_scope,
+                timeout,
+                max_retries,
+            )
 
         if log_handler:
             self.log.addHandler(log_handler)
@@ -106,10 +113,17 @@ class Client(object):
             for _ in range(thread):
                 self.consumers = []
                 consumer = Consumer(
-                    self.queue, write_key, host=host, on_error=on_error,
-                    upload_size=upload_size, upload_interval=upload_interval,
-                    gzip=gzip, retries=max_retries, timeout=timeout,
-                    proxies=proxies, oauth_manager=self.oauth_manager,
+                    self.queue,
+                    write_key,
+                    host=host,
+                    on_error=on_error,
+                    upload_size=upload_size,
+                    upload_interval=upload_interval,
+                    gzip=gzip,
+                    retries=max_retries,
+                    timeout=timeout,
+                    proxies=proxies,
+                    oauth_manager=self.oauth_manager,
                 )
                 self.consumers.append(consumer)
 
@@ -117,8 +131,16 @@ class Client(object):
                 if send:
                     consumer.start()
 
-    def identify(self, user_id=None, traits=None, context=None, timestamp=None,
-                 anonymous_id=None, integrations=None, message_id=None):
+    def identify(
+        self,
+        user_id=None,
+        traits=None,
+        context=None,
+        timestamp=None,
+        anonymous_id=None,
+        integrations=None,
+        message_id=None,
+    ):
         traits = traits or {}
         context = context or {}
         integrations = integrations or {}
@@ -138,9 +160,17 @@ class Client(object):
 
         return self._enqueue(msg)
 
-    def track(self, user_id=None, event=None, properties=None, context=None,
-              timestamp=None, anonymous_id=None, integrations=None,
-              message_id=None):
+    def track(
+        self,
+        user_id=None,
+        event=None,
+        properties=None,
+        context=None,
+        timestamp=None,
+        anonymous_id=None,
+        integrations=None,
+        message_id=None,
+    ):
         properties = properties or {}
         context = context or {}
         integrations = integrations or {}
@@ -162,8 +192,15 @@ class Client(object):
 
         return self._enqueue(msg)
 
-    def alias(self, previous_id=None, user_id=None, context=None,
-              timestamp=None, integrations=None, message_id=None):
+    def alias(
+        self,
+        previous_id=None,
+        user_id=None,
+        context=None,
+        timestamp=None,
+        integrations=None,
+        message_id=None,
+    ):
         context = context or {}
         integrations = integrations or {}
         require('previous_id', previous_id, ID_TYPES)
@@ -181,9 +218,17 @@ class Client(object):
 
         return self._enqueue(msg)
 
-    def group(self, user_id=None, group_id=None, traits=None, context=None,
-              timestamp=None, anonymous_id=None, integrations=None,
-              message_id=None):
+    def group(
+        self,
+        user_id=None,
+        group_id=None,
+        traits=None,
+        context=None,
+        timestamp=None,
+        anonymous_id=None,
+        integrations=None,
+        message_id=None,
+    ):
         traits = traits or {}
         context = context or {}
         integrations = integrations or {}
@@ -205,9 +250,18 @@ class Client(object):
 
         return self._enqueue(msg)
 
-    def page(self, user_id=None, category=None, name=None, properties=None,
-             context=None, timestamp=None, anonymous_id=None,
-             integrations=None, message_id=None):
+    def page(
+        self,
+        user_id=None,
+        category=None,
+        name=None,
+        properties=None,
+        context=None,
+        timestamp=None,
+        anonymous_id=None,
+        integrations=None,
+        message_id=None,
+    ):
         properties = properties or {}
         context = context or {}
         integrations = integrations or {}
@@ -234,9 +288,18 @@ class Client(object):
 
         return self._enqueue(msg)
 
-    def screen(self, user_id=None, category=None, name=None, properties=None,
-               context=None, timestamp=None, anonymous_id=None,
-               integrations=None, message_id=None):
+    def screen(
+        self,
+        user_id=None,
+        category=None,
+        name=None,
+        properties=None,
+        context=None,
+        timestamp=None,
+        anonymous_id=None,
+        integrations=None,
+        message_id=None,
+    ):
         properties = properties or {}
         context = context or {}
         integrations = integrations or {}
@@ -281,10 +344,7 @@ class Client(object):
         timestamp = guess_timezone(timestamp)
         msg['timestamp'] = timestamp.isoformat(timespec='milliseconds')
         msg['messageId'] = stringify_id(message_id)
-        msg['context']['library'] = {
-            'name': 'analytics-python',
-            'version': VERSION
-        }
+        msg['context']['library'] = {'name': 'analytics-python', 'version': VERSION}
 
         msg['userId'] = stringify_id(msg.get('userId', None))
         msg['anonymousId'] = stringify_id(msg.get('anonymousId', None))
@@ -295,7 +355,11 @@ class Client(object):
         # Check message size.
         msg_size = len(json.dumps(msg, cls=DatetimeSerializer).encode())
         if msg_size > MAX_MSG_SIZE:
-            raise RuntimeError('Message exceeds %skb limit. (%s)', str(int(MAX_MSG_SIZE / 1024)), str(msg))
+            raise RuntimeError(
+                'Message exceeds %skb limit. (%s)',
+                str(int(MAX_MSG_SIZE / 1024)),
+                str(msg),
+            )
 
         # if send is False, return msg as if it was successfully queued
         if not self.send:
@@ -303,9 +367,15 @@ class Client(object):
 
         if self.sync_mode:
             self.log.debug('enqueued with blocking %s.', msg['type'])
-            post(self.write_key, self.host, gzip=self.gzip,
-                 timeout=self.timeout, proxies=self.proxies, 
-                 oauth_manager=self.oauth_manager, batch=[msg])
+            post(
+                self.write_key,
+                self.host,
+                gzip=self.gzip,
+                timeout=self.timeout,
+                proxies=self.proxies,
+                oauth_manager=self.oauth_manager,
+                batch=[msg],
+            )
 
             return True, msg
 

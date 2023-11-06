@@ -10,17 +10,11 @@ clean:
 repl:
 	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} python
 
-pylint:
+format:
 	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
-	pylint --rcfile=.pylintrc --reports=y --exit-zero segment/analytics | tee pylint.out
-
-black:
+	ruff check --fix segment/analytics/
 	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
-	python -m black segment/analytics
-
-flake8:
-	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
-	flake8 --max-complexity=10 --statistics segment/analytics > flake8.out || true
+	ruff format segment/analytics/
 
 test:
 	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
