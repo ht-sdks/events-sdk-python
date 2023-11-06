@@ -22,13 +22,16 @@ Documentation and more details at https://github.com/segmentio/analytics-python
 install_requires = [
     "requests~=2.7",
     "backoff~=2.1",
-    "python-dateutil~=2.2"
+    "python-dateutil~=2.2",
 ]
 
 tests_require = [
+    "PyJWT~=2.8",
+    "pyjwt[crypto]",
     "mock==2.0.0",
-    "pylint==2.8.0",
+    "pylint==2.17.7",
     "flake8==3.7.9",
+    "black==23.10.1",
 ]
 
 setup(

@@ -1,28 +1,29 @@
+PWD := $(shell pwd)
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
+
 build:
 	docker build -t events-sdk-python/${BRANCH} .
 
-BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 clean:
 	docker rmi events-sdk-python/${BRANCH}
 
-BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 repl:
-	docker run --rm -it events-sdk-python/${BRANCH} python
+	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} python
 
-BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 pylint:
-	docker run --rm -it events-sdk-python/${BRANCH} \
+	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
 	pylint --rcfile=.pylintrc --reports=y --exit-zero segment/analytics | tee pylint.out
 
-BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
+black:
+	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
+	python -m black segment/analytics
+
 flake8:
-	docker run --rm -it events-sdk-python/${BRANCH} \
+	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
 	flake8 --max-complexity=10 --statistics segment/analytics > flake8.out || true
 
-BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 test:
-	docker run --rm -it events-sdk-python/${BRANCH} \
+	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
 	python -m unittest segment.analytics.test.all
 
 release:
@@ -32,4 +33,4 @@ release:
 e2e_test:
 	.buildscripts/e2e.sh
 
-.PHONY: build clean repl pylint flake8 test release e2e_test
+.PHONY: build clean repl pylint flake8 black test release e2e_test
