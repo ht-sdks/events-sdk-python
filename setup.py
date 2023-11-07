@@ -5,8 +5,8 @@ try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
-# Don't import analytics-python module here, since deps may not be installed
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'hightouch','analytics'))
+# Don't import htevents-python module here, since deps may not be installed
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'hightouch','htevents'))
 from version import VERSION
 
 long_description = '''
@@ -36,8 +36,8 @@ setup(
     author_email='engineering@hightouch.com',
     maintainer='Hightouch',
     maintainer_email='engineering@hightouch.com',
-    test_suite='hightouch.analytics.test.all',
-    packages=['hightouch.analytics', 'hightouch.analytics.test'],
+    test_suite='hightouch.htevents.test.all',
+    packages=['hightouch.htevents', 'hightouch.htevents.test'],
     python_requires='>=3.6.0',
     license='MIT License',
     install_requires=install_requires,

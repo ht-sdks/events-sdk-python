@@ -4,8 +4,8 @@ from datetime import date, datetime
 
 import mock
 
-from hightouch.analytics.client import Client
-from hightouch.analytics.version import VERSION
+from hightouch.htevents.client import Client
+from hightouch.htevents.version import VERSION
 
 from .constants import TEST_WRITE_KEY
 
@@ -89,7 +89,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(msg['event'], 'python test event')
         self.assertEqual(msg['anonymousId'], 'anonymousId')
         self.assertEqual(
-            msg['context']['library'], {'name': 'analytics-python', 'version': VERSION}
+            msg['context']['library'], {'name': 'events-sdk-python', 'version': VERSION}
         )
         self.assertEqual(msg['messageId'], 'messageId')
         self.assertEqual(msg['userId'], 'userId')
@@ -128,7 +128,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(msg['traits'], {'trait': 'value'})
         self.assertEqual(msg['anonymousId'], 'anonymousId')
         self.assertEqual(
-            msg['context']['library'], {'name': 'analytics-python', 'version': VERSION}
+            msg['context']['library'], {'name': 'events-sdk-python', 'version': VERSION}
         )
         self.assertTrue(isinstance(msg['timestamp'], str))
         self.assertEqual(msg['messageId'], 'messageId')
@@ -167,7 +167,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(msg['traits'], {'trait': 'value'})
         self.assertEqual(msg['anonymousId'], 'anonymousId')
         self.assertEqual(
-            msg['context']['library'], {'name': 'analytics-python', 'version': VERSION}
+            msg['context']['library'], {'name': 'events-sdk-python', 'version': VERSION}
         )
         self.assertTrue(isinstance(msg['timestamp'], str))
         self.assertEqual(msg['messageId'], 'messageId')
@@ -215,7 +215,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(msg['properties'], {'property': 'value'})
         self.assertEqual(msg['anonymousId'], 'anonymousId')
         self.assertEqual(
-            msg['context']['library'], {'name': 'analytics-python', 'version': VERSION}
+            msg['context']['library'], {'name': 'events-sdk-python', 'version': VERSION}
         )
         self.assertEqual(msg['category'], 'category')
         self.assertTrue(isinstance(msg['timestamp'], str))
@@ -255,7 +255,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(msg['properties'], {'property': 'value'})
         self.assertEqual(msg['anonymousId'], 'anonymousId')
         self.assertEqual(
-            msg['context']['library'], {'name': 'analytics-python', 'version': VERSION}
+            msg['context']['library'], {'name': 'events-sdk-python', 'version': VERSION}
         )
         self.assertTrue(isinstance(msg['timestamp'], str))
         self.assertEqual(msg['messageId'], 'messageId')
@@ -359,7 +359,7 @@ class TestClient(unittest.TestCase):
         # the post function should be called 2 times, with a batch size of 10
         # each time.
         with mock.patch(
-            'hightouch.analytics.consumer.post', side_effect=mock_post_fn
+            'hightouch.htevents.consumer.post', side_effect=mock_post_fn
         ) as mock_post:
             for _ in range(20):
                 client.identify('userId', {'trait': 'value'})

@@ -2,10 +2,10 @@
 
 ## Installation
 
-Install `hightouch-analytics-python` using pip:
+Install `events-sdk-python` using pip:
 
 ```bash
-pip3 install hightouch-analytics-python
+pip3 install events-sdk-python
 ```
 
 or you can clone this repo:
@@ -23,53 +23,53 @@ sudo python3 setup.py install
 By default, you do not need to manually instantiate the client. Simply set your key and start calling methods.
 
 ```python
-import hightouch.analytics as analytics
+import hightouch.htevents as htevents
 
-analytics.write_key = 'YOUR_WRITE_KEY'
+htevents.write_key = 'YOUR_WRITE_KEY'
 
-analytics.identify('userId1', {
+htevents.identify('userId1', {
     'email': 'bat@example.com',
     'name': 'Person People',
 })
 
-analytics.track('userId1', 'Order Completed', {})
+htevents.track('userId1', 'Order Completed', {})
 ```
 
 **Note** If you need to send data to multiple Hightouch sources, you can initialize one new Client per `write_key`.
 
 ```python
-from hightouch.analytics.client import Client
+from hightouch.htevents.client import Client
 
-analytics.write_key = 'YOUR_WRITE_KEY'
-other_analytics = Client('<OTHER_WRITE_KEY>')
+htevents.write_key = 'YOUR_WRITE_KEY'
+other_htevents = Client('<OTHER_WRITE_KEY>')
 
-analytics.identify('userId1', {
+htevents.identify('userId1', {
     'email': 'bat@example.com',
     'name': 'Person People',
 })
 
-other_analytics.identify('userId1', {
+other_htevents.identify('userId1', {
     'email': 'bat@example.com',
     'name': 'Person People',
 })
 
-analytics.track('userId1', 'Order Completed', {})
-other_analytics.track('userId1', 'Order Completed', {})
+htevents.track('userId1', 'Order Completed', {})
+other_htevents.track('userId1', 'Order Completed', {})
 ```
 
 **Note** Only instantiate `Client` class **once** per write key, per application.
 
 ```python
 from flask import Flask
-from hightouch.analytics.client import Client
+from hightouch.htevents.client import Client
 
 app = Flask(__name__)
 
 // For example, in flask, instantiate the client outside of the request handlers
-analytics = Client('<WRITE_KEY>')
+htevents = Client('<WRITE_KEY>')
 
 @app.route('/')
 def hello_world():
-   analytics.track('userId1', 'hello', {})
+   htevents.track('userId1', 'hello', {})
    return 'Hello World'
 ```

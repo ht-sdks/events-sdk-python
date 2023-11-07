@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 import time
-import hightouch.analytics as analytics
+import hightouch.htevents as htevents
 
 privatekey = '''-----BEGIN PRIVATE KEY-----
 MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDVll7uJaH322IN
@@ -34,19 +34,19 @@ mDyRxq7ohIzLkw8b8buDeuXZ
 -----END PRIVATE KEY-----
 ''' # Should be read from a file on disk which can be rotated out
 
-analytics.write_key = '<YOUR WRITE KEY HERE>'
+htevents.write_key = '<YOUR WRITE KEY HERE>'
 
-analytics.oauth_client_id = 'CLIENT_ID' # OAuth application ID from hightouch dashboard
-analytics.oauth_client_key = privatekey # generated as a public/private key pair in PEM format from OpenSSL
-analytics.oauth_key_id = 'KEY_ID' # From hightouch dashboard after uploading public key
-analytics.oauth_scope =  'tracking_api:write' #'public_api:read_write'
+htevents.oauth_client_id = 'CLIENT_ID' # OAuth application ID from hightouch dashboard
+htevents.oauth_client_key = privatekey # generated as a public/private key pair in PEM format from OpenSSL
+htevents.oauth_key_id = 'KEY_ID' # From hightouch dashboard after uploading public key
+htevents.oauth_scope =  'tracking_api:write' #'public_api:read_write'
 
 def on_error(error, items):
     print("An error occurred: ", error)
-analytics.debug = True
-analytics.on_error = on_error
+htevents.debug = True
+htevents.on_error = on_error
 
-analytics.track('AUser', 'track')
-analytics.flush()
+htevents.track('AUser', 'track')
+htevents.flush()
 
 time.sleep(3)

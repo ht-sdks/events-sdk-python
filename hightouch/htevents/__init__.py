@@ -1,5 +1,5 @@
-from hightouch.analytics.client import Client
-from hightouch.analytics.version import VERSION
+from hightouch.htevents.client import Client
+from hightouch.htevents.version import VERSION
 
 __version__ = VERSION
 
@@ -73,7 +73,7 @@ def shutdown():
 
 
 def _proxy(method, *args, **kwargs):
-    """Create an analytics client if one doesn't exist and send to it."""
+    """Create an htevents client if one doesn't exist and send to it."""
     global default_client
     if not default_client:
         default_client = Client(

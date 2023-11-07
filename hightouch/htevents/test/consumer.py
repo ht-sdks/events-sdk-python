@@ -9,8 +9,8 @@ try:
 except ImportError:
     from Queue import Queue
 
-from hightouch.analytics.consumer import MAX_MSG_SIZE, Consumer
-from hightouch.analytics.request import APIError
+from hightouch.htevents.consumer import MAX_MSG_SIZE, Consumer
+from hightouch.htevents.request import APIError
 
 from .constants import TEST_WRITE_KEY
 
@@ -58,7 +58,7 @@ class TestConsumer(unittest.TestCase):
         consumer = Consumer(
             q, TEST_WRITE_KEY, upload_size=10, upload_interval=upload_interval
         )
-        with mock.patch('hightouch.analytics.consumer.post') as mock_post:
+        with mock.patch('hightouch.htevents.consumer.post') as mock_post:
             consumer.start()
             for i in range(0, 3):
                 track = {
@@ -79,7 +79,7 @@ class TestConsumer(unittest.TestCase):
         consumer = Consumer(
             q, TEST_WRITE_KEY, upload_size=upload_size, upload_interval=upload_interval
         )
-        with mock.patch('hightouch.analytics.consumer.post') as mock_post:
+        with mock.patch('hightouch.htevents.consumer.post') as mock_post:
             consumer.start()
             for i in range(0, upload_size * 2):
                 track = {
@@ -106,7 +106,7 @@ class TestConsumer(unittest.TestCase):
         mock_post.call_count = 0
 
         with mock.patch(
-            'hightouch.analytics.consumer.post', mock.Mock(side_effect=mock_post)
+            'hightouch.htevents.consumer.post', mock.Mock(side_effect=mock_post)
         ):
             track = {'type': 'track', 'event': 'python event', 'userId': 'userId'}
             # request() should succeed if the number of exceptions raised is
@@ -183,7 +183,7 @@ class TestConsumer(unittest.TestCase):
             return res
 
         with mock.patch(
-            'hightouch.analytics.request._session.post', side_effect=mock_post_fn
+            'hightouch.htevents.request._session.post', side_effect=mock_post_fn
         ) as mock_post:
             consumer.start()
             for _ in range(0, n_msgs + 2):

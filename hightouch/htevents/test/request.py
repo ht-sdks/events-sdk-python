@@ -4,7 +4,7 @@ from datetime import date, datetime
 
 import requests
 
-from hightouch.analytics.request import DatetimeSerializer, post
+from hightouch.htevents.request import DatetimeSerializer, post
 
 from .constants import TEST_WRITE_KEY
 

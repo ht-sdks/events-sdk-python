@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from dateutil.tz import tzutc
 
-from hightouch.analytics import utils
+from hightouch.htevents import utils
 
 
 class TestUtils(unittest.TestCase):

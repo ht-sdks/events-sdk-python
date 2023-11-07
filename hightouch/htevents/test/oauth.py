@@ -11,8 +11,8 @@ import mock
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../..'))
 import requests
 
-import hightouch.analytics.oauth_manager
-from hightouch.analytics.client import Client
+import hightouch.htevents.oauth_manager
+from hightouch.htevents.client import Client
 
 privatekey = """-----BEGIN PRIVATE KEY-----
 MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDVll7uJaH322IN
@@ -114,7 +114,7 @@ mocked_requests_get.error_count = -1
 class TestOauthManager(unittest.TestCase):
     @mock.patch.object(requests.Session, 'post', side_effect=mocked_requests_get)
     def test_oauth_success(self, mock_post):
-        manager = hightouch.analytics.oauth_manager.OauthManager(
+        manager = hightouch.htevents.oauth_manager.OauthManager(
             'id', privatekey, 'keyid', 'http://127.0.0.1:80'
         )
         self.assertEqual(manager.get_token(), 'test_token')
@@ -126,7 +126,7 @@ class TestOauthManager(unittest.TestCase):
 
     @mock.patch.object(requests.Session, 'post', side_effect=mocked_requests_get)
     def test_oauth_fail_unrecoverably(self, mock_post):
-        manager = hightouch.analytics.oauth_manager.OauthManager(
+        manager = hightouch.htevents.oauth_manager.OauthManager(
             'id', privatekey, 'keyid', 'http://127.0.0.1:400'
         )
         with self.assertRaises(Exception) as _context:
@@ -137,7 +137,7 @@ class TestOauthManager(unittest.TestCase):
 
     @mock.patch.object(requests.Session, 'post', side_effect=mocked_requests_get)
     def test_oauth_fail_with_retries(self, mock_post):
-        manager = hightouch.analytics.oauth_manager.OauthManager(
+        manager = hightouch.htevents.oauth_manager.OauthManager(
             'id', privatekey, 'keyid', 'http://127.0.0.1:500'
         )
         with self.assertRaises(Exception) as _context:
@@ -151,7 +151,7 @@ class TestOauthManager(unittest.TestCase):
         'time.sleep', spec=time.sleep
     )  # 429 uses sleep so it won't be interrupted
     def test_oauth_rate_limit_delay(self, mock_sleep, mock_post):
-        manager = hightouch.analytics.oauth_manager.OauthManager(
+        manager = hightouch.htevents.oauth_manager.OauthManager(
             'id', privatekey, 'keyid', 'http://127.0.0.1:429'
         )
         manager._poller_loop()

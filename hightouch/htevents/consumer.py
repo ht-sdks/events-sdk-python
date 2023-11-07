@@ -6,7 +6,7 @@ from threading import Thread
 
 import backoff
 
-from hightouch.analytics.request import APIError, DatetimeSerializer, post
+from hightouch.htevents.request import APIError, DatetimeSerializer, post
 
 MAX_MSG_SIZE = 32 << 10
 

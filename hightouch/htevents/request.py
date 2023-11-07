@@ -7,8 +7,8 @@ from io import BytesIO
 from dateutil.tz import tzutc
 from requests import sessions
 
-from hightouch.analytics.utils import remove_trailing_slash
-from hightouch.analytics.version import VERSION
+from hightouch.htevents.utils import remove_trailing_slash
+from hightouch.htevents.version import VERSION
 
 _session = sessions.Session()
 
@@ -39,7 +39,7 @@ def post(
     log.debug('making request: %s', data)
     headers = {
         'Content-Type': 'application/json',
-        'User-Agent': 'analytics-python/' + VERSION,
+        'User-Agent': 'events-sdk-python/' + VERSION,
     }
     if auth:
         headers['Authorization'] = 'Bearer {}'.format(auth)

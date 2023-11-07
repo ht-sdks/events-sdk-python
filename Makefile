@@ -9,13 +9,13 @@ clean:
 
 format:
 	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
-	ruff check --fix hightouch/analytics/
+	ruff check --fix hightouch/htevents/
 	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
-	ruff format hightouch/analytics/
+	ruff format hightouch/htevents/
 
 test:
 	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
-	python -m unittest hightouch.analytics.test.all
+	python -m unittest hightouch.htevents.test.all
 
 repl:
 	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} python

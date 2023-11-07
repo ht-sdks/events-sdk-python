@@ -1,7 +1,7 @@
 import logging
 import argparse
 import json
-import hightouch.analytics as analytics
+import hightouch.htevents as htevents
 
 __name__ = 'simulator.py'
 __version__ = '0.0.1'
@@ -12,7 +12,7 @@ def json_hash(str):
     if str:
         return json.loads(str)
 
-# analytics -method=<method> -hightouch-write-key=<hightouchWriteKey> [options]
+# htevents -method=<method> -hightouch-write-key=<hightouchWriteKey> [options]
 
 
 parser = argparse.ArgumentParser(description='send a hightouch message')
@@ -46,27 +46,27 @@ def failed(status, msg):
 
 
 def track():
-    analytics.track(options.userId, options.event, anonymous_id=options.anonymousId,
+    htevents.track(options.userId, options.event, anonymous_id=options.anonymousId,
                     properties=json_hash(options.properties), context=json_hash(options.context))
 
 
 def page():
-    analytics.page(options.userId, name=options.name, anonymous_id=options.anonymousId,
+    htevents.page(options.userId, name=options.name, anonymous_id=options.anonymousId,
                    properties=json_hash(options.properties), context=json_hash(options.context))
 
 
 def screen():
-    analytics.screen(options.userId, name=options.name, anonymous_id=options.anonymousId,
+    htevents.screen(options.userId, name=options.name, anonymous_id=options.anonymousId,
                      properties=json_hash(options.properties), context=json_hash(options.context))
 
 
 def identify():
-    analytics.identify(options.userId, anonymous_id=options.anonymousId,
+    htevents.identify(options.userId, anonymous_id=options.anonymousId,
                        traits=json_hash(options.traits), context=json_hash(options.context))
 
 
 def group():
-    analytics.group(options.userId, options.groupId, json_hash(options.traits),
+    htevents.group(options.userId, options.groupId, json_hash(options.traits),
                     json_hash(options.context), anonymous_id=options.anonymousId)
 
 
@@ -74,9 +74,9 @@ def unknown():
     print()
 
 
-analytics.write_key = options.writeKey
-analytics.on_error = failed
-analytics.debug = True
+htevents.write_key = options.writeKey
+htevents.on_error = failed
+htevents.debug = True
 
 log = logging.getLogger('hightouch')
 ch = logging.StreamHandler()
@@ -94,6 +94,6 @@ switcher = {
 func = switcher.get(options.type)
 if func:
     func()
-    analytics.shutdown()
+    htevents.shutdown()
 else:
     print("Invalid Message Type " + options.type)

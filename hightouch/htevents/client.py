@@ -8,11 +8,11 @@ from uuid import uuid4
 
 from dateutil.tz import tzutc
 
-from hightouch.analytics.consumer import MAX_MSG_SIZE, Consumer
-from hightouch.analytics.oauth_manager import OauthManager
-from hightouch.analytics.request import DatetimeSerializer, post
-from hightouch.analytics.utils import clean, guess_timezone
-from hightouch.analytics.version import VERSION
+from hightouch.htevents.consumer import MAX_MSG_SIZE, Consumer
+from hightouch.htevents.oauth_manager import OauthManager
+from hightouch.htevents.request import DatetimeSerializer, post
+from hightouch.htevents.utils import clean, guess_timezone
+from hightouch.htevents.version import VERSION
 
 ID_TYPES = (numbers.Number, str)
 
@@ -344,7 +344,7 @@ class Client(object):
         timestamp = guess_timezone(timestamp)
         msg['timestamp'] = timestamp.isoformat(timespec='milliseconds')
         msg['messageId'] = stringify_id(message_id)
-        msg['context']['library'] = {'name': 'analytics-python', 'version': VERSION}
+        msg['context']['library'] = {'name': 'events-sdk-python', 'version': VERSION}
 
         msg['userId'] = stringify_id(msg.get('userId', None))
         msg['anonymousId'] = stringify_id(msg.get('anonymousId', None))
@@ -384,7 +384,7 @@ class Client(object):
             self.log.debug('enqueued %s.', msg['type'])
             return True, msg
         except queue.Full:
-            self.log.warning('analytics-python queue is full')
+            self.log.warning('htevents-python queue is full')
             return False, msg
 
     def flush(self):

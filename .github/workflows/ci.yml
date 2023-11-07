@@ -35,8 +35,8 @@ jobs:
 
       - name: Run ruff linting
         run: |
-          python -m ruff check hightouch/analytics/
-          python -m ruff --diff format hightouch/analytics/
+          python -m ruff check hightouch/htevents/
+          python -m ruff --diff format hightouch/htevents/
 
       - name: Run unittests
-        run: python -m unittest hightouch.analytics.test.all
+        run: python -m unittest hightouch.htevents.test.all

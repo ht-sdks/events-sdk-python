@@ -7,9 +7,9 @@ from datetime import datetime
 import jwt
 from requests import sessions
 
-from hightouch.analytics import utils
-from hightouch.analytics.consumer import FatalError
-from hightouch.analytics.request import APIError
+from hightouch.htevents import utils
+from hightouch.htevents.consumer import FatalError
+from hightouch.htevents.request import APIError
 
 _session = sessions.Session()
 
