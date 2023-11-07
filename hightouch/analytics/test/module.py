@@ -1,6 +1,7 @@
 import unittest
 
 import hightouch.analytics as analytics
+
 from .constants import TEST_WRITE_KEY
 
 

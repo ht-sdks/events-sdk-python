@@ -5,6 +5,7 @@ from datetime import date, datetime
 import requests
 
 from hightouch.analytics.request import DatetimeSerializer, post
+
 from .constants import TEST_WRITE_KEY
 
 
@@ -18,11 +19,18 @@ class TestRequests(unittest.TestCase):
 
     def test_invalid_request_error(self):
         self.assertRaises(
-            Exception, post, TEST_WRITE_KEY, 'https://us-east-1.hightouch-events.com', False, '[{]'
+            Exception,
+            post,
+            TEST_WRITE_KEY,
+            'https://us-east-1.hightouch-events.com',
+            False,
+            '[{]',
         )
 
     def test_invalid_host(self):
-        self.assertRaises(Exception, post, TEST_WRITE_KEY, 'us-east-1.hightouch-events.com/', batch=[])
+        self.assertRaises(
+            Exception, post, TEST_WRITE_KEY, 'us-east-1.hightouch-events.com/', batch=[]
+        )
 
     def test_datetime_serialization(self):
         data = {'created': datetime(2012, 3, 4, 5, 6, 7, 891011)}

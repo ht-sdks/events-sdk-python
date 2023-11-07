@@ -28,7 +28,10 @@ def post(
     if 'sentAt' not in body.keys():
         body['sentAt'] = datetime.utcnow().replace(tzinfo=tzutc()).isoformat()
     body['writeKey'] = write_key
-    url = remove_trailing_slash(host or 'https://us-east-1.hightouch-events.com') + '/v1/batch'
+    url = (
+        remove_trailing_slash(host or 'https://us-east-1.hightouch-events.com')
+        + '/v1/batch'
+    )
     auth = None
     if oauth_manager:
         auth = oauth_manager.get_token()

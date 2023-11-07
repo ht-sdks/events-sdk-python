@@ -4,7 +4,6 @@ import unittest
 
 import mock
 
-
 try:
     from queue import Queue
 except ImportError:
@@ -14,6 +13,7 @@ from hightouch.analytics.consumer import MAX_MSG_SIZE, Consumer
 from hightouch.analytics.request import APIError
 
 from .constants import TEST_WRITE_KEY
+
 
 class TestConsumer(unittest.TestCase):
     def test_next(self):

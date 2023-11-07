@@ -5,6 +5,7 @@ import unittest
 
 import hightouch.analytics as analytics
 from hightouch.analytics.client import Client
+
 from .constants import TEST_WRITE_KEY
 
 
