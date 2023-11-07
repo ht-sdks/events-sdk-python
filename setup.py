@@ -10,13 +10,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'hightouch','analytic
 from version import VERSION
 
 long_description = '''
-Hightouch is the simplest way to integrate analytics into your application.
-One API allows you to turn on any other analytics service. No more learning
-new APIs, repeated code, and wasted development time.
+Events SDK Python for Hightouch event collection.
 
-This is the official python client that wraps the Hightouch REST API (https://hightouch.com).
-
-Documentation and more details at https://github.com/ht-sdks/events-sdk-python
+See https://github.com/ht-sdks/events-sdk-python for details.
 '''
 
 install_requires = [
@@ -33,7 +29,7 @@ tests_require = [
 ]
 
 setup(
-    name='hightouch-analytics-python',
+    name='events-sdk-python',
     version=VERSION,
     url='https://github.com/ht-sdks/events-sdk-python',
     author='Hightouch',
@@ -48,7 +44,7 @@ setup(
     extras_require={
         'test': tests_require
     },
-    description='The hassle-free way to integrate analytics into any python application.',
+    description='Events SDK Python',
     long_description=long_description,
     classifiers=[
         "Development Status :: 5 - Production/Stable",

@@ -27,30 +27,49 @@ import hightouch.analytics as analytics
 
 analytics.write_key = 'YOUR_WRITE_KEY'
 
-analytics.identify('foo', {
+analytics.identify('userId1', {
     'email': 'bat@example.com',
     'name': 'Person People',
 })
 
-analytics.track('foo')
+analytics.track('userId1', 'Order Completed', {})
 ```
 
-**Note** If you need to send data to multiple Hightouch sources, you can initialize one new Client per `write_key`. Only instantiate one `Client` class per write key per application.
+**Note** If you need to send data to multiple Hightouch sources, you can initialize one new Client per `write_key`.
 
 ```python
-import hightouch.analytics as analytics
 from hightouch.analytics.client import Client
 
 analytics.write_key = 'YOUR_WRITE_KEY'
 other_analytics = Client('<OTHER_WRITE_KEY>')
 
-analytics.identify('foo', {
+analytics.identify('userId1', {
     'email': 'bat@example.com',
     'name': 'Person People',
 })
 
-other_analytics.identify('foo', {
+other_analytics.identify('userId1', {
     'email': 'bat@example.com',
     'name': 'Person People',
 })
+
+analytics.track('userId1', 'Order Completed', {})
+other_analytics.track('userId1', 'Order Completed', {})
+```
+
+**Note** Only instantiate `Client` class **once** per write key, per application.
+
+```python
+from flask import Flask
+from hightouch.analytics.client import Client
+
+app = Flask(__name__)
+
+// For example, in flask, instantiate the client outside of the request handlers
+analytics = Client('<WRITE_KEY>')
+
+@app.route('/')
+def hello_world():
+   analytics.track('userId1', 'hello', {})
+   return 'Hello World'
 ```

@@ -1,4 +1,4 @@
-name: Run CI (pylint, flake8, unittests)
+name: CI - Lint and Test
 
 on:
   push:
