@@ -5,17 +5,7 @@
 Install `events-sdk-python` using pip:
 
 ```bash
-pip3 install events-sdk-python
-```
-
-or you can clone this repo:
-
-```bash
-git clone https://github.com/ht-sdks/events-sdk-python.git
-
-cd events-sdk-python
-
-sudo python3 setup.py install
+python -m pip install events-sdk-python
 ```
 
 ## Usage
