@@ -1,0 +1,48 @@
+[build-system]
+requires      = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["hightouch"]
+exclude = []
+namespaces = false
+
+[project]
+name = "events-sdk-python"
+version = "0.0.1"
+description = "Events SDK Python for Hightouch event collection."
+readme = "README.md"
+authors = [{ name = "Hightouch", email = "engineering@hightouch.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+keywords = []
+dependencies = [
+    "requests~=2.7",
+    "backoff~=2.1",
+    "python-dateutil~=2.2",
+]
+requires-python = ">=3.6"
+
+[project.optional-dependencies]
+dev = [
+    "PyJWT~=2.8",
+    "pyjwt[crypto]",
+    "mock==2.0.0",
+    "ruff==0.1.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/ht-sdks/events-sdk-python"

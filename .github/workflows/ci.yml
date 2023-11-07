@@ -17,7 +17,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.9, 3.11]
+        python-version: [3.7, 3.9, 3.11]
 
     steps:
       - name: Checkout
@@ -31,7 +31,7 @@ jobs:
       - name: Install depenedencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .[test]
+          python -m pip install -e .[dev]
 
       - name: Run ruff linting
         run: |
