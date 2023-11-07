@@ -7,9 +7,9 @@ from datetime import datetime
 import jwt
 from requests import sessions
 
-from segment.analytics import utils
-from segment.analytics.consumer import FatalError
-from segment.analytics.request import APIError
+from hightouch.analytics import utils
+from hightouch.analytics.consumer import FatalError
+from hightouch.analytics.request import APIError
 
 _session = sessions.Session()
 
@@ -20,7 +20,7 @@ class OauthManager(object):
         client_id,
         client_key,
         key_id,
-        auth_server='https://oauth2.segment.io',
+        auth_server='https://oauth2.hightouch.io',
         scope='tracking_api:write',
         timeout=15,
         max_retries=3,
@@ -35,7 +35,7 @@ class OauthManager(object):
         self.retry_count = 0
         self.clock_skew = 0
 
-        self.log = logging.getLogger('segment')
+        self.log = logging.getLogger('hightouch')
         self.thread = None
         self.token_mutex = threading.Lock()
         self.token = None

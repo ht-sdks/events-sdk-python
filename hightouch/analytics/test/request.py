@@ -4,24 +4,25 @@ from datetime import date, datetime
 
 import requests
 
-from segment.analytics.request import DatetimeSerializer, post
+from hightouch.analytics.request import DatetimeSerializer, post
+from .constants import TEST_WRITE_KEY
 
 
 class TestRequests(unittest.TestCase):
     def test_valid_request(self):
         res = post(
-            'testsecret',
+            TEST_WRITE_KEY,
             batch=[{'userId': 'userId', 'event': 'python event', 'type': 'track'}],
         )
         self.assertEqual(res.status_code, 200)
 
     def test_invalid_request_error(self):
         self.assertRaises(
-            Exception, post, 'testsecret', 'https://api.segment.io', False, '[{]'
+            Exception, post, TEST_WRITE_KEY, 'https://us-east-1.hightouch-events.com', False, '[{]'
         )
 
     def test_invalid_host(self):
-        self.assertRaises(Exception, post, 'testsecret', 'api.segment.io/', batch=[])
+        self.assertRaises(Exception, post, TEST_WRITE_KEY, 'us-east-1.hightouch-events.com/', batch=[])
 
     def test_datetime_serialization(self):
         data = {'created': datetime(2012, 3, 4, 5, 6, 7, 891011)}
@@ -37,7 +38,7 @@ class TestRequests(unittest.TestCase):
 
     def test_should_not_timeout(self):
         res = post(
-            'testsecret',
+            TEST_WRITE_KEY,
             batch=[{'userId': 'userId', 'event': 'python event', 'type': 'track'}],
             timeout=15,
         )
@@ -46,14 +47,14 @@ class TestRequests(unittest.TestCase):
     def test_should_timeout(self):
         with self.assertRaises(requests.ReadTimeout):
             post(
-                'testsecret',
+                TEST_WRITE_KEY,
                 batch=[{'userId': 'userId', 'event': 'python event', 'type': 'track'}],
                 timeout=0.0001,
             )
 
     def test_proxies(self):
         res = post(
-            'testsecret',
+            TEST_WRITE_KEY,
             batch=[
                 {
                     'userId': 'userId',

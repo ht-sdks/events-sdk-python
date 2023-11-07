@@ -1,6 +1,7 @@
 import unittest
 
-import segment.analytics as analytics
+import hightouch.analytics as analytics
+from .constants import TEST_WRITE_KEY
 
 
 class TestModule(unittest.TestCase):
@@ -9,7 +10,7 @@ class TestModule(unittest.TestCase):
 
     def setUp(self):
         self.failed = False
-        analytics.write_key = 'testsecret'
+        analytics.write_key = TEST_WRITE_KEY
         analytics.on_error = self.failed
 
     def test_no_write_key(self):

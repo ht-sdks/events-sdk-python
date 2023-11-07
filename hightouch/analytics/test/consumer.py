@@ -4,14 +4,16 @@ import unittest
 
 import mock
 
+
 try:
     from queue import Queue
 except ImportError:
     from Queue import Queue
 
-from segment.analytics.consumer import MAX_MSG_SIZE, Consumer
-from segment.analytics.request import APIError
+from hightouch.analytics.consumer import MAX_MSG_SIZE, Consumer
+from hightouch.analytics.request import APIError
 
+from .constants import TEST_WRITE_KEY
 
 class TestConsumer(unittest.TestCase):
     def test_next(self):
@@ -41,7 +43,7 @@ class TestConsumer(unittest.TestCase):
 
     def test_upload(self):
         q = Queue()
-        consumer = Consumer(q, 'testsecret')
+        consumer = Consumer(q, TEST_WRITE_KEY)
         track = {'type': 'track', 'event': 'python event', 'userId': 'userId'}
         q.put(track)
         success = consumer.upload()
@@ -54,9 +56,9 @@ class TestConsumer(unittest.TestCase):
         q = Queue()
         upload_interval = 0.3
         consumer = Consumer(
-            q, 'testsecret', upload_size=10, upload_interval=upload_interval
+            q, TEST_WRITE_KEY, upload_size=10, upload_interval=upload_interval
         )
-        with mock.patch('segment.analytics.consumer.post') as mock_post:
+        with mock.patch('hightouch.analytics.consumer.post') as mock_post:
             consumer.start()
             for i in range(0, 3):
                 track = {
@@ -75,9 +77,9 @@ class TestConsumer(unittest.TestCase):
         upload_interval = 0.5
         upload_size = 10
         consumer = Consumer(
-            q, 'testsecret', upload_size=upload_size, upload_interval=upload_interval
+            q, TEST_WRITE_KEY, upload_size=upload_size, upload_interval=upload_interval
         )
-        with mock.patch('segment.analytics.consumer.post') as mock_post:
+        with mock.patch('hightouch.analytics.consumer.post') as mock_post:
             consumer.start()
             for i in range(0, upload_size * 2):
                 track = {
@@ -91,7 +93,7 @@ class TestConsumer(unittest.TestCase):
 
     @classmethod
     def test_request(cls):
-        consumer = Consumer(None, 'testsecret')
+        consumer = Consumer(None, TEST_WRITE_KEY)
         track = {'type': 'track', 'event': 'python event', 'userId': 'userId'}
         consumer.request([track])
 
@@ -104,7 +106,7 @@ class TestConsumer(unittest.TestCase):
         mock_post.call_count = 0
 
         with mock.patch(
-            'segment.analytics.consumer.post', mock.Mock(side_effect=mock_post)
+            'hightouch.analytics.consumer.post', mock.Mock(side_effect=mock_post)
         ):
             track = {'type': 'track', 'event': 'python event', 'userId': 'userId'}
             # request() should succeed if the number of exceptions raised is
@@ -127,23 +129,23 @@ class TestConsumer(unittest.TestCase):
 
     def test_request_retry(self):
         # we should retry on general errors
-        consumer = Consumer(None, 'testsecret')
+        consumer = Consumer(None, TEST_WRITE_KEY)
         self._test_request_retry(consumer, Exception('generic exception'), 2)
 
         # we should retry on server errors
-        consumer = Consumer(None, 'testsecret')
+        consumer = Consumer(None, TEST_WRITE_KEY)
         self._test_request_retry(
             consumer, APIError(500, 'code', 'Internal Server Error'), 2
         )
 
         # we should retry on HTTP 429 errors
-        consumer = Consumer(None, 'testsecret')
+        consumer = Consumer(None, TEST_WRITE_KEY)
         self._test_request_retry(
             consumer, APIError(429, 'code', 'Too Many Requests'), 2
         )
 
         # we should NOT retry on other client errors
-        consumer = Consumer(None, 'testsecret')
+        consumer = Consumer(None, TEST_WRITE_KEY)
         api_error = APIError(400, 'code', 'Client Errors')
         try:
             self._test_request_retry(consumer, api_error, 1)
@@ -153,19 +155,19 @@ class TestConsumer(unittest.TestCase):
             self.fail('request() should not retry on client errors')
 
         # test for number of exceptions raise > retries value
-        consumer = Consumer(None, 'testsecret', retries=3)
+        consumer = Consumer(None, TEST_WRITE_KEY, retries=3)
         self._test_request_retry(
             consumer, APIError(500, 'code', 'Internal Server Error'), 3
         )
 
     def test_pause(self):
-        consumer = Consumer(None, 'testsecret')
+        consumer = Consumer(None, TEST_WRITE_KEY)
         consumer.pause()
         self.assertFalse(consumer.running)
 
     def test_max_batch_size(self):
         q = Queue()
-        consumer = Consumer(q, 'testsecret', upload_size=100000, upload_interval=3)
+        consumer = Consumer(q, TEST_WRITE_KEY, upload_size=100000, upload_interval=3)
         track = {'type': 'track', 'event': 'python event', 'userId': 'userId'}
         msg_size = len(json.dumps(track).encode())
         # number of messages in a maximum-size batch
@@ -181,7 +183,7 @@ class TestConsumer(unittest.TestCase):
             return res
 
         with mock.patch(
-            'segment.analytics.request._session.post', side_effect=mock_post_fn
+            'hightouch.analytics.request._session.post', side_effect=mock_post_fn
         ) as mock_post:
             consumer.start()
             for _ in range(0, n_msgs + 2):
@@ -191,6 +193,6 @@ class TestConsumer(unittest.TestCase):
 
     @classmethod
     def test_proxies(cls):
-        consumer = Consumer(None, 'testsecret', proxies='203.243.63.16:80')
+        consumer = Consumer(None, TEST_WRITE_KEY, proxies='203.243.63.16:80')
         track = {'type': 'track', 'event': 'python event', 'userId': 'userId'}
         consumer.request([track])

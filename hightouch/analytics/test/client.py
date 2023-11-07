@@ -4,8 +4,10 @@ from datetime import date, datetime
 
 import mock
 
-from segment.analytics.client import Client
-from segment.analytics.version import VERSION
+from hightouch.analytics.client import Client
+from hightouch.analytics.version import VERSION
+
+from .constants import TEST_WRITE_KEY
 
 
 class TestClient(unittest.TestCase):
@@ -15,7 +17,7 @@ class TestClient(unittest.TestCase):
 
     def setUp(self):
         self.failed = False
-        self.client = Client('testsecret', on_error=self.fail)
+        self.client = Client(TEST_WRITE_KEY, on_error=self.fail)
 
     def test_requires_write_key(self):
         self.assertRaises(AssertionError, Client)
@@ -287,7 +289,7 @@ class TestClient(unittest.TestCase):
             self.assertFalse(consumer.is_alive())
 
     def test_synchronous(self):
-        client = Client('testsecret', sync_mode=True)
+        client = Client(TEST_WRITE_KEY, sync_mode=True)
 
         success, _ = client.identify('userId')
         self.assertFalse(client.consumers)
@@ -295,7 +297,7 @@ class TestClient(unittest.TestCase):
         self.assertTrue(success)
 
     def test_overflow(self):
-        client = Client('testsecret', max_queue_size=1)
+        client = Client(TEST_WRITE_KEY, max_queue_size=1)
         # Ensure consumer thread is no longer uploading
         client.join()
 
@@ -306,11 +308,12 @@ class TestClient(unittest.TestCase):
         # Make sure we are informed that the queue is at capacity
         self.assertFalse(success)
 
-    def test_success_on_invalid_write_key(self):
+    def test_failure_on_invalid_write_key(self):
         client = Client('bad_key', on_error=self.fail)
-        client.track('userId', 'event')
+        success, msg = client.track('userId', 'event')
+        print(success, msg)
         client.flush()
-        self.assertFalse(self.failed)
+        self.assertTrue(self.failed)
 
     def test_unicode(self):
         Client('unicode_key')
@@ -339,7 +342,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(msg['traits'], {'birthdate': date(1981, 2, 2)})
 
     def test_gzip(self):
-        client = Client('testsecret', on_error=self.fail, gzip=True)
+        client = Client(TEST_WRITE_KEY, on_error=self.fail, gzip=True)
         for _ in range(10):
             client.identify('userId', {'trait': 'value'})
         client.flush()
@@ -347,7 +350,7 @@ class TestClient(unittest.TestCase):
 
     def test_user_defined_upload_size(self):
         client = Client(
-            'testsecret', on_error=self.fail, upload_size=10, upload_interval=3
+            TEST_WRITE_KEY, on_error=self.fail, upload_size=10, upload_interval=3
         )
 
         def mock_post_fn(*args, **kwargs):
@@ -356,7 +359,7 @@ class TestClient(unittest.TestCase):
         # the post function should be called 2 times, with a batch size of 10
         # each time.
         with mock.patch(
-            'segment.analytics.consumer.post', side_effect=mock_post_fn
+            'hightouch.analytics.consumer.post', side_effect=mock_post_fn
         ) as mock_post:
             for _ in range(20):
                 client.identify('userId', {'trait': 'value'})
@@ -364,16 +367,16 @@ class TestClient(unittest.TestCase):
             self.assertEqual(mock_post.call_count, 2)
 
     def test_user_defined_timeout(self):
-        client = Client('testsecret', timeout=10)
+        client = Client(TEST_WRITE_KEY, timeout=10)
         for consumer in client.consumers:
             self.assertEqual(consumer.timeout, 10)
 
     def test_default_timeout_15(self):
-        client = Client('testsecret')
+        client = Client(TEST_WRITE_KEY)
         for consumer in client.consumers:
             self.assertEqual(consumer.timeout, 15)
 
     def test_proxies(self):
-        client = Client('testsecret', proxies='203.243.63.16:80')
+        client = Client(TEST_WRITE_KEY, proxies='203.243.63.16:80')
         success, msg = client.identify('userId', {'trait': 'value'})
         self.assertTrue(success)

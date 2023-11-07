@@ -7,8 +7,8 @@ from io import BytesIO
 from dateutil.tz import tzutc
 from requests import sessions
 
-from segment.analytics.utils import remove_trailing_slash
-from segment.analytics.version import VERSION
+from hightouch.analytics.utils import remove_trailing_slash
+from hightouch.analytics.version import VERSION
 
 _session = sessions.Session()
 
@@ -23,12 +23,12 @@ def post(
     **kwargs,
 ):
     """Post the `kwargs` to the API"""
-    log = logging.getLogger('segment')
+    log = logging.getLogger('hightouch')
     body = kwargs
     if 'sentAt' not in body.keys():
         body['sentAt'] = datetime.utcnow().replace(tzinfo=tzutc()).isoformat()
     body['writeKey'] = write_key
-    url = remove_trailing_slash(host or 'https://api.segment.io') + '/v1/batch'
+    url = remove_trailing_slash(host or 'https://us-east-1.hightouch-events.com') + '/v1/batch'
     auth = None
     if oauth_manager:
         auth = oauth_manager.get_token()
@@ -69,6 +69,10 @@ def post(
         log.debug('data uploaded successfully')
         return res
 
+    if res.status_code == 401:
+        log.error('Unknown error: [%s] %s', res.status_code, res.reason)
+        raise APIError(res.status_code, 'unknown', res.text)
+
     if oauth_manager and res.status_code in [400, 401, 403]:
         oauth_manager.clear_token()
 
@@ -88,7 +92,7 @@ class APIError(Exception):
         self.code = code
 
     def __str__(self):
-        msg = '[Segment] {0}: {1} ({2})'
+        msg = '[Hightouch] {0}: {1} ({2})'
         return msg.format(self.code, self.message, self.status)
 
 

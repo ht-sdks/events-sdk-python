@@ -6,7 +6,7 @@ from threading import Thread
 
 import backoff
 
-from segment.analytics.request import APIError, DatetimeSerializer, post
+from hightouch.analytics.request import APIError, DatetimeSerializer, post
 
 MAX_MSG_SIZE = 32 << 10
 
@@ -20,14 +20,14 @@ class FatalError(Exception):
         self.message = message
 
     def __str__(self):
-        msg = '[Segment] {0})'
+        msg = '[Hightouch] {0})'
         return msg.format(self.message)
 
 
 class Consumer(Thread):
     """Consumes the messages from the client's queue."""
 
-    log = logging.getLogger('segment')
+    log = logging.getLogger('hightouch')
 
     def __init__(
         self,

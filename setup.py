@@ -6,17 +6,17 @@ try:
 except ImportError:
     from distutils.core import setup
 # Don't import analytics-python module here, since deps may not be installed
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'segment','analytics'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'hightouch','analytics'))
 from version import VERSION
 
 long_description = '''
-Segment is the simplest way to integrate analytics into your application.
+Hightouch is the simplest way to integrate analytics into your application.
 One API allows you to turn on any other analytics service. No more learning
 new APIs, repeated code, and wasted development time.
 
-This is the official python client that wraps the Segment REST API (https://segment.com).
+This is the official python client that wraps the Hightouch REST API (https://hightouch.com).
 
-Documentation and more details at https://github.com/segmentio/analytics-python
+Documentation and more details at https://github.com/ht-sdks/events-sdk-python
 '''
 
 install_requires = [
@@ -33,15 +33,15 @@ tests_require = [
 ]
 
 setup(
-    name='segment-analytics-python',
+    name='hightouch-analytics-python',
     version=VERSION,
-    url='https://github.com/segmentio/analytics-python',
-    author='Segment',
-    author_email='friends@segment.com',
-    maintainer='Segment',
-    maintainer_email='friends@segment.com',
-    test_suite='segment.analytics.test.all',
-    packages=['segment.analytics', 'segment.analytics.test'],
+    url='https://github.com/ht-sdks/events-sdk-python',
+    author='Hightouch',
+    author_email='engineering@hightouch.com',
+    maintainer='Hightouch',
+    maintainer_email='engineering@hightouch.com',
+    test_suite='hightouch.analytics.test.all',
+    packages=['hightouch.analytics', 'hightouch.analytics.test'],
     python_requires='>=3.6.0',
     license='MIT License',
     install_requires=install_requires,

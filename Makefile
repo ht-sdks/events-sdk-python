@@ -12,13 +12,13 @@ repl:
 
 format:
 	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
-	ruff check --fix segment/analytics/
+	ruff check --fix hightouch/analytics/
 	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
-	ruff format segment/analytics/
+	ruff format hightouch/analytics/
 
 test:
 	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
-	python -m unittest segment.analytics.test.all
+	python -m unittest hightouch.analytics.test.all
 
 release:
 	python setup.py sdist bdist_wheel
@@ -27,4 +27,4 @@ release:
 e2e_test:
 	.buildscripts/e2e.sh
 
-.PHONY: build clean repl pylint flake8 black test release e2e_test
+.PHONY: build clean repl format test release e2e_test

@@ -28,7 +28,7 @@ jobs:
       - run: pip3 install --user appdirs
       - run: pipreqs .
       - run: pip3 install --user -r requirements.txt
-      - run: curl -sL https://raw.githubusercontent.com/segmentio/snyk_helpers/master/initialization/snyk.sh | sh
+      - run: curl -sL https://raw.githubusercontent.com/hightouchio/snyk_helpers/master/initialization/snyk.sh | sh
 
   test_37: &test
     docker:

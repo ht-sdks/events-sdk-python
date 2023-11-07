@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from dateutil.tz import tzutc
 
-from segment.analytics import utils
+from hightouch.analytics import utils
 
 
 class TestUtils(unittest.TestCase):
@@ -67,8 +67,8 @@ class TestUtils(unittest.TestCase):
 
     def test_remove_slash(self):
         self.assertEqual(
-            'http://segment.io', utils.remove_trailing_slash('http://segment.io/')
+            'http://hightouch.io', utils.remove_trailing_slash('http://hightouch.io/')
         )
         self.assertEqual(
-            'http://segment.io', utils.remove_trailing_slash('http://segment.io')
+            'http://hightouch.io', utils.remove_trailing_slash('http://hightouch.io')
         )

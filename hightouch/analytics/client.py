@@ -8,11 +8,11 @@ from uuid import uuid4
 
 from dateutil.tz import tzutc
 
-from segment.analytics.consumer import MAX_MSG_SIZE, Consumer
-from segment.analytics.oauth_manager import OauthManager
-from segment.analytics.request import DatetimeSerializer, post
-from segment.analytics.utils import clean, guess_timezone
-from segment.analytics.version import VERSION
+from hightouch.analytics.consumer import MAX_MSG_SIZE, Consumer
+from hightouch.analytics.oauth_manager import OauthManager
+from hightouch.analytics.request import DatetimeSerializer, post
+from hightouch.analytics.utils import clean, guess_timezone
+from hightouch.analytics.version import VERSION
 
 ID_TYPES = (numbers.Number, str)
 
@@ -37,11 +37,11 @@ class Client(object):
         oauth_client_id = None
         oauth_client_key = None
         oauth_key_id = None
-        oauth_auth_server = 'https://oauth2.segment.io'
+        oauth_auth_server = 'https://oauth2.hightouch.io'
         oauth_scope = 'tracking_api:write'
 
-    """Create a new Segment client."""
-    log = logging.getLogger('segment')
+    """Create a new Hightouch client."""
+    log = logging.getLogger('hightouch')
 
     def __init__(
         self,

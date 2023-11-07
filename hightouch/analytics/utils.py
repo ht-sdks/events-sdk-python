@@ -6,7 +6,7 @@ from enum import Enum
 
 from dateutil.tz import tzlocal, tzutc
 
-log = logging.getLogger('segment')
+log = logging.getLogger('hightouch')
 
 
 def is_naive(dt):

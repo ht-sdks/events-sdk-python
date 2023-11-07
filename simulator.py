@@ -1,7 +1,7 @@
 import logging
 import argparse
 import json
-import segment.analytics as analytics
+import hightouch.analytics as analytics
 
 __name__ = 'simulator.py'
 __version__ = '0.0.1'
@@ -12,13 +12,13 @@ def json_hash(str):
     if str:
         return json.loads(str)
 
-# analytics -method=<method> -segment-write-key=<segmentWriteKey> [options]
+# analytics -method=<method> -hightouch-write-key=<hightouchWriteKey> [options]
 
 
-parser = argparse.ArgumentParser(description='send a segment message')
+parser = argparse.ArgumentParser(description='send a hightouch message')
 
-parser.add_argument('--writeKey', help='the Segment writeKey')
-parser.add_argument('--type', help='The Segment message type')
+parser.add_argument('--writeKey', help='the Hightouch writeKey')
+parser.add_argument('--type', help='The Hightouch message type')
 
 parser.add_argument('--userId', help='the user id to send the event as')
 parser.add_argument(
@@ -78,7 +78,7 @@ analytics.write_key = options.writeKey
 analytics.on_error = failed
 analytics.debug = True
 
-log = logging.getLogger('segment')
+log = logging.getLogger('hightouch')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 log.addHandler(ch)

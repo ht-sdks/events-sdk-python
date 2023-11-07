@@ -1,5 +1,5 @@
-from segment.analytics.client import Client
-from segment.analytics.version import VERSION
+from hightouch.analytics.client import Client
+from hightouch.analytics.version import VERSION
 
 __version__ = VERSION
 

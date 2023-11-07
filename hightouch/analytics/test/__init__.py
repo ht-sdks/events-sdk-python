@@ -3,13 +3,14 @@ import pkgutil
 import sys
 import unittest
 
-import segment.analytics as analytics
-from segment.analytics.client import Client
+import hightouch.analytics as analytics
+from hightouch.analytics.client import Client
+from .constants import TEST_WRITE_KEY
 
 
 def all_names():
     for _, modname, _ in pkgutil.iter_modules(__path__):
-        yield 'segment.analytics.test.' + modname
+        yield 'hightouch.analytics.test.' + modname
 
 
 def all():
@@ -60,7 +61,7 @@ class TestInit(unittest.TestCase):
 
     def test_max_retries(self):
         self.assertIsNone(analytics.default_client)
-        client = Client('testsecret', max_retries=42)
+        client = Client(TEST_WRITE_KEY, max_retries=42)
         for consumer in client.consumers:
             self.assertEqual(consumer.retries, 42)
 
