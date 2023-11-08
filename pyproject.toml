@@ -4,13 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["hightouch"]
-exclude = []
-namespaces = false
+include = ["hightouch*"]
 
 [project]
 name = "events-sdk-python"
-version = "0.0.1"
+version = "0.0.2"
 description = "Events SDK Python for Hightouch event collection."
 readme = "README.md"
 authors = [{ name = "Hightouch", email = "engineering@hightouch.com" }]
