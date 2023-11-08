@@ -6,6 +6,8 @@ build:
 
 clean:
 	docker rmi events-sdk-python/${BRANCH}
+	# rm -rf dist
+	# rm -rf events_sdk_python.egg-info
 
 format:
 	docker run --rm -it -v ${PWD}:/dkr events-sdk-python/${BRANCH} \
