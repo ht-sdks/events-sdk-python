@@ -11,19 +11,7 @@ This file provides instructions for AI agents working on this Python SDK reposit
 - **Linting/Formatting**: Ruff (configured in `ruff.toml`)
 - **Published To**: PyPI as `events-sdk-python`
 
-### Dependencies
-
-Runtime dependencies are defined in `pyproject.toml` under `[project] dependencies`:
-
-- `requests~=2.7` — HTTP client
-- `backoff~=2.1` — Retry logic with exponential backoff
-- `python-dateutil~=2.2` — Date parsing
-- `PyJWT>=2.0,<3.0` + `pyjwt[crypto]` — JWT signing for OAuth
-
-Dev dependencies are defined under `[project.optional-dependencies] dev`:
-
-- `mock==2.0.0` — Test mocking
-- `ruff==0.1.4` — Linting and formatting
+Dependencies (runtime and dev) are defined in `pyproject.toml`.
 
 ---
 
