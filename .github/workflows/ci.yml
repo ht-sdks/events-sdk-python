@@ -40,7 +40,7 @@ jobs:
       - name: Run ruff linting
         run: |
           python -m ruff check hightouch/htevents/
-          python -m ruff --diff format hightouch/htevents/
+          python -m ruff format --diff hightouch/htevents/
 
       - name: Run unittests
         run: python -m unittest hightouch.htevents.test.all
