@@ -4,7 +4,7 @@ This file provides instructions for AI agents working on this Python SDK reposit
 
 ## Project Overview
 
-- **Language**: Python (3.6+, CI tests on 3.7, 3.9, 3.11)
+- **Language**: Python (3.6+, CI tests on 3.9, 3.11, 3.13)
 - **Package Manager**: pip with setuptools
 - **Build System**: setuptools + wheel (configured via `pyproject.toml`)
 - **Testing**: unittest (standard library)
@@ -134,21 +134,21 @@ Compare test results to baseline. Fix any failures before proceeding.
 
 ### 7. Verify CI Would Pass
 
-The CI matrix tests Python 3.7, 3.9, and 3.11. If you have `pyenv` or multiple Python versions available, test across versions:
+The CI matrix tests Python 3.9, 3.11, and 3.13. If you have `pyenv` or multiple Python versions available, test across versions:
 
 ```bash
 # Example with pyenv
-pyenv shell 3.7
-python -m pip install -e .[dev] && python -m unittest hightouch.htevents.test.all
-
 pyenv shell 3.9
 python -m pip install -e .[dev] && python -m unittest hightouch.htevents.test.all
 
 pyenv shell 3.11
 python -m pip install -e .[dev] && python -m unittest hightouch.htevents.test.all
+
+pyenv shell 3.13
+python -m pip install -e .[dev] && python -m unittest hightouch.htevents.test.all
 ```
 
-At minimum, ensure tests pass on Python 3.11 (the primary CI target).
+At minimum, ensure tests pass on Python 3.13 (the latest CI target).
 
 ---
 
