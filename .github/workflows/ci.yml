@@ -4,11 +4,15 @@ on:
   push:
     branches:
       - master
-    paths-ignore:
-      - "**.md"
+    paths:
+      - "**"
+      - "!**.md"
+      - "AGENTS.md"
   pull_request:
-    paths-ignore:
-      - "**.md"
+    paths:
+      - "**"
+      - "!**.md"
+      - "AGENTS.md"
 
 jobs:
   test-python:
