@@ -28,18 +28,18 @@ classifiers = [
 ]
 keywords = []
 dependencies = [
-    "requests~=2.7",
-    "backoff~=2.1",
-    "python-dateutil~=2.2",
-    "PyJWT>=2.0,<3.0",
+    "requests~=2.32",
+    "backoff~=2.2",
+    "python-dateutil~=2.9",
+    "PyJWT>=2.8,<3.0",
     "pyjwt[crypto]",
 ]
 requires-python = ">=3.6"
 
 [project.optional-dependencies]
 dev = [
-    "mock==2.0.0",
-    "ruff==0.1.4",
+    "mock==5.2.0",
+    "ruff==0.15.1",
 ]
 
 [project.urls]
