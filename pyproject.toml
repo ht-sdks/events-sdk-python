@@ -8,7 +8,7 @@ include = ["hightouch*"]
 
 [project]
 name = "events-sdk-python"
-version = "0.0.3"
+version = "0.1.0"
 description = "Events SDK Python for Hightouch event collection."
 readme = "README.md"
 authors = [{ name = "Hightouch", email = "engineering@hightouch.com" }]
@@ -19,27 +19,26 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 keywords = []
 dependencies = [
-    "requests~=2.7",
-    "backoff~=2.1",
-    "python-dateutil~=2.2",
-    "PyJWT>=2.0,<3.0",
+    "requests~=2.32",
+    "backoff~=2.2",
+    "python-dateutil~=2.9",
+    "PyJWT>=2.8,<3.0",
     "pyjwt[crypto]",
 ]
-requires-python = ">=3.6"
+requires-python = ">=3.9"
 
 [project.optional-dependencies]
 dev = [
-    "mock==2.0.0",
-    "ruff==0.1.4",
+    "mock==5.2.0",
+    "ruff==0.15.1",
 ]
 
 [project.urls]
