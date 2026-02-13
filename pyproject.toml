@@ -19,12 +19,11 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 keywords = []
 dependencies = [
@@ -34,7 +33,7 @@ dependencies = [
     "PyJWT>=2.8,<3.0",
     "pyjwt[crypto]",
 ]
-requires-python = ">=3.6"
+requires-python = ">=3.9"
 
 [project.optional-dependencies]
 dev = [
