@@ -4,7 +4,7 @@ This file provides instructions for AI agents working on this Python SDK reposit
 
 ## Project Overview
 
-- **Language**: Python (3.6+, CI tests on 3.9, 3.11, 3.13)
+- **Language**: Python (3.9+, CI tests on 3.9, 3.11, 3.13)
 - **Package Manager**: pip with setuptools
 - **Build System**: setuptools + wheel (configured via `pyproject.toml`)
 - **Testing**: unittest (standard library)
@@ -147,12 +147,12 @@ At minimum, ensure tests pass on Python 3.13 (the latest CI target).
 The SDK uses `PyJWT` with the `[crypto]` extra for OAuth. If you see import errors related to `jwt` or `cryptography` after upgrading, ensure:
 
 ```bash
-python -m pip install "PyJWT>=2.0,<3.0" "pyjwt[crypto]"
+python -m pip install "PyJWT>=2.8,<3.0" "pyjwt[crypto]"
 ```
 
 ### Ruff Version Pinning
 
-The dev dependency pins `ruff==0.1.4`. If updating Ruff, be aware that newer versions may introduce new lint rules or change formatting behavior. After updating:
+The dev dependency pins `ruff==0.15.1`. If updating Ruff, be aware that newer versions may introduce new lint rules or change formatting behavior. After updating:
 
 1. Run `ruff check hightouch/htevents/` and fix any new violations
 2. Run `ruff format --diff hightouch/htevents/` to check for formatting changes
