@@ -49,6 +49,76 @@ class TestConsumer(unittest.TestCase):
         success = consumer.upload()
         self.assertTrue(success)
 
+    def test_upload_failure_returns_false_and_acks_queue(self):
+        q = Queue()
+        consumer = Consumer(q, TEST_WRITE_KEY)
+        track = {'type': 'track', 'event': 'python event', 'userId': 'userId'}
+        q.put(track)
+        with mock.patch.object(
+            consumer, 'request', side_effect=Exception('upload failed')
+        ):
+            success = consumer.upload()
+        self.assertFalse(success)
+        self.assertTrue(q.empty())
+        q.join()
+
+    def test_on_error_called_on_upload_failure(self):
+        q = Queue()
+        errors = []
+
+        def on_error(error, batch):
+            errors.append((error, batch))
+
+        consumer = Consumer(q, TEST_WRITE_KEY, on_error=on_error)
+        track = {'type': 'track', 'event': 'python event', 'userId': 'userId'}
+        q.put(track)
+        upload_error = Exception('upload failed')
+        with mock.patch.object(consumer, 'request', side_effect=upload_error):
+            success = consumer.upload()
+        self.assertFalse(success)
+        self.assertEqual(len(errors), 1)
+        self.assertIs(errors[0][0], upload_error)
+        self.assertEqual(errors[0][1], [track])
+        q.join()
+
+    def test_on_error_exception_does_not_propagate(self):
+        q = Queue()
+
+        def on_error(error, batch):
+            raise RuntimeError('callback failed')
+
+        consumer = Consumer(q, TEST_WRITE_KEY, on_error=on_error)
+        track = {'type': 'track', 'event': 'python event', 'userId': 'userId'}
+        q.put(track)
+        with mock.patch.object(
+            consumer, 'request', side_effect=Exception('upload failed')
+        ):
+            success = consumer.upload()
+        self.assertFalse(success)
+        self.assertTrue(q.empty())
+        q.join()
+
+    def test_on_error_exception_does_not_stop_consumer(self):
+        q = Queue()
+
+        def on_error(error, batch):
+            raise RuntimeError('callback failed')
+
+        consumer = Consumer(
+            q, TEST_WRITE_KEY, on_error=on_error, retries=0, upload_interval=0.1
+        )
+        with mock.patch(
+            'hightouch.htevents.consumer.post', side_effect=Exception('upload failed')
+        ):
+            consumer.start()
+            q.put({'type': 'track', 'event': 'e1', 'userId': 'userId'})
+            q.join()
+            q.put({'type': 'track', 'event': 'e2', 'userId': 'userId'})
+            q.join()
+            self.assertTrue(consumer.is_alive())
+            consumer.pause()
+            consumer.join(timeout=2)
+
     def test_upload_interval(self):
         # Put _n_ items in the queue, pausing a little bit more than
         # _upload_interval_ after each one.
