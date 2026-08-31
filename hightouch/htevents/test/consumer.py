@@ -93,10 +93,16 @@ class TestConsumer(unittest.TestCase):
         with mock.patch.object(
             consumer, 'request', side_effect=Exception('upload failed')
         ):
-            success = consumer.upload()
+            # Capture logs so the intentional traceback is not emitted to
+            # stderr (GitHub Actions would annotate it as a check failure).
+            with self.assertLogs('hightouch', level='ERROR') as logs:
+                success = consumer.upload()
         self.assertFalse(success)
         self.assertTrue(q.empty())
         q.join()
+        self.assertTrue(
+            any('error in on_error callback' in message for message in logs.output)
+        )
 
     def test_on_error_exception_does_not_stop_consumer(self):
         q = Queue()
@@ -110,14 +116,15 @@ class TestConsumer(unittest.TestCase):
         with mock.patch(
             'hightouch.htevents.consumer.post', side_effect=Exception('upload failed')
         ):
-            consumer.start()
-            q.put({'type': 'track', 'event': 'e1', 'userId': 'userId'})
-            q.join()
-            q.put({'type': 'track', 'event': 'e2', 'userId': 'userId'})
-            q.join()
-            self.assertTrue(consumer.is_alive())
-            consumer.pause()
-            consumer.join(timeout=2)
+            with self.assertLogs('hightouch', level='ERROR'):
+                consumer.start()
+                q.put({'type': 'track', 'event': 'e1', 'userId': 'userId'})
+                q.join()
+                q.put({'type': 'track', 'event': 'e2', 'userId': 'userId'})
+                q.join()
+                self.assertTrue(consumer.is_alive())
+                consumer.pause()
+                consumer.join(timeout=2)
 
     def test_upload_interval(self):
         # Put _n_ items in the queue, pausing a little bit more than
