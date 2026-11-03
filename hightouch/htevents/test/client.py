@@ -288,6 +288,17 @@ class TestClient(unittest.TestCase):
         for consumer in client.consumers:
             self.assertFalse(consumer.is_alive())
 
+    def test_multiple_threads_all_tracked_and_stopped(self):
+        client = Client(TEST_WRITE_KEY, thread=3)
+        self.assertEqual(len(client.consumers), 3)
+        self.assertEqual(len({id(c) for c in client.consumers}), 3)
+        for _ in range(10):
+            client.identify('userId', {'trait': 'value'})
+        client.shutdown()
+        self.assertTrue(client.queue.empty())
+        for consumer in client.consumers:
+            self.assertFalse(consumer.is_alive())
+
     def test_synchronous(self):
         client = Client(TEST_WRITE_KEY, sync_mode=True)
 
