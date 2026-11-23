@@ -72,10 +72,6 @@ def post(
         log.debug('data uploaded successfully')
         return res
 
-    if res.status_code == 401:
-        log.error('Unknown error: [%s] %s', res.status_code, res.reason)
-        raise APIError(res.status_code, 'unknown', res.text)
-
     if oauth_manager and res.status_code in [400, 401, 403]:
         oauth_manager.clear_token()
 
@@ -83,7 +79,7 @@ def post(
         payload = res.json()
         log.debug('received response: %s', payload)
         raise APIError(res.status_code, payload['code'], payload['message'])
-    except ValueError:
+    except (ValueError, KeyError, TypeError):
         log.error('Unknown error: [%s] %s', res.status_code, res.reason)
         raise APIError(res.status_code, 'unknown', res.text)
 

@@ -2,7 +2,7 @@ import json
 import logging
 import time
 from queue import Empty
-from threading import Thread
+from threading import Event, Thread
 
 import backoff
 
@@ -59,6 +59,7 @@ class Consumer(Thread):
         # run() *after* we set it to False in pause... and keep running
         # forever.
         self.running = True
+        self._paused = Event()
         self.retries = retries
         self.timeout = timeout
         self.proxies = proxies
@@ -75,6 +76,7 @@ class Consumer(Thread):
     def pause(self):
         """Pause the consumer."""
         self.running = False
+        self._paused.set()
 
     def upload(self):
         """Upload the next batch of items, return whether successful."""
@@ -136,10 +138,7 @@ class Consumer(Thread):
 
         def fatal_exception(exc):
             if isinstance(exc, APIError):
-                # retry on server errors and client errors
-                # with 429 status code (rate limited),
-                # don't retry on other client errors
-                return (400 <= exc.status < 500) and exc.status != 429
+                return 400 <= exc.status < 500 and exc.status not in (408, 429)
             elif isinstance(exc, FatalError):
                 return True
             else:
@@ -160,4 +159,17 @@ class Consumer(Thread):
                 oauth_manager=self.oauth_manager,
             )
 
-        send_request()
+        delay = 1
+        while True:
+            try:
+                return send_request()
+            except APIError as exc:
+                if exc.status not in (401, 403, 404):
+                    raise
+                self.log.warning(
+                    'Collector returned HTTP %s. Check the write key and endpoint. '
+                    'Retrying in %s seconds.', exc.status, delay
+                )
+                if self._paused.wait(delay):
+                    raise
+                delay = min(delay * 2, 60)
