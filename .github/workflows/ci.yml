@@ -17,7 +17,8 @@ on:
 jobs:
   test-python:
     name: Test python
-    runs-on: ubuntu-latest
+    # Python 3.9 binaries are available on Ubuntu 24.04.
+    runs-on: ${{ matrix.python-version == '3.9' && 'ubuntu-24.04' || 'ubuntu-latest' }}
     strategy:
       max-parallel: 4
       matrix:

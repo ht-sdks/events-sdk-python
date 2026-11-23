@@ -207,10 +207,16 @@ class TestConsumer(unittest.TestCase):
     def test_configuration_failures_probe_the_original_batch(self):
         consumer = Consumer(None, TEST_WRITE_KEY, retries=0)
         failures = [APIError(status, 'unknown', '') for status in (401, 403, 404)]
-        with mock.patch('hightouch.htevents.consumer.post', side_effect=failures + [None]) as post:
-            with mock.patch.object(consumer._paused, 'wait', return_value=False) as wait:
+        with mock.patch(
+            'hightouch.htevents.consumer.post', side_effect=failures + [None]
+        ) as post:
+            with mock.patch.object(
+                consumer._paused, 'wait', return_value=False
+            ) as wait:
                 consumer.request([{'messageId': 'original'}])
-        self.assertEqual(wait.call_args_list, [mock.call(1), mock.call(2), mock.call(4)])
+        self.assertEqual(
+            wait.call_args_list, [mock.call(1), mock.call(2), mock.call(4)]
+        )
         self.assertEqual(post.call_args_list, [post.call_args] * 4)
 
     def test_request_retry(self):
@@ -224,9 +230,7 @@ class TestConsumer(unittest.TestCase):
             consumer, APIError(500, 'code', 'Internal Server Error'), 2
         )
 
-        self._test_request_retry(
-            consumer, APIError(408, 'code', 'Request Timeout'), 1
-        )
+        self._test_request_retry(consumer, APIError(408, 'code', 'Request Timeout'), 1)
 
         # we should retry on HTTP 429 errors
         consumer = Consumer(None, TEST_WRITE_KEY)

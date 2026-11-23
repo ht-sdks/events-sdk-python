@@ -168,7 +168,9 @@ class Consumer(Thread):
                     raise
                 self.log.warning(
                     'Collector returned HTTP %s. Check the write key and endpoint. '
-                    'Retrying in %s seconds.', exc.status, delay
+                    'Retrying in %s seconds.',
+                    exc.status,
+                    delay,
                 )
                 if self._paused.wait(delay):
                     raise
