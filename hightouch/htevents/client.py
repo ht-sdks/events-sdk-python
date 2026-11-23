@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from dateutil.tz import tzutc
 
-from hightouch.htevents.consumer import MAX_MSG_SIZE, Consumer
+from hightouch.htevents.consumer import MAX_MSG_SIZE, Consumer, SourceRecovery
 from hightouch.htevents.oauth_manager import OauthManager
 from hightouch.htevents.request import DatetimeSerializer, post
 from hightouch.htevents.utils import clean, guess_timezone
@@ -110,11 +110,13 @@ class Client(object):
             # to call flush().
             if send:
                 atexit.register(self.join)
+            self.consumers = []
+            recovery = SourceRecovery()
             for _ in range(thread):
-                self.consumers = []
                 consumer = Consumer(
                     self.queue,
                     write_key,
+                    recovery=recovery,
                     host=host,
                     on_error=on_error,
                     upload_size=upload_size,
@@ -399,8 +401,9 @@ class Client(object):
         """Ends the consumer thread once the queue is empty.
         Blocks execution until finished
         """
-        for consumer in self.consumers:
+        for consumer in self.consumers or []:
             consumer.pause()
+        for consumer in self.consumers or []:
             try:
                 consumer.join()
             except RuntimeError:
@@ -409,6 +412,8 @@ class Client(object):
 
     def shutdown(self):
         """Flush all messages and cleanly shutdown the client"""
+        for consumer in self.consumers or []:
+            consumer.stop_recovery()
         self.flush()
         self.join()
 

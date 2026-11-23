@@ -1,10 +1,12 @@
 import json
 import logging
 import time
+from collections import deque
 from queue import Empty
-from threading import Event, Thread
+from threading import Condition, Thread
 
 import backoff
+from requests import RequestException
 
 from hightouch.htevents.request import APIError, DatetimeSerializer, post
 
@@ -22,6 +24,72 @@ class FatalError(Exception):
     def __str__(self):
         msg = '[Hightouch] {0})'
         return msg.format(self.message)
+
+
+class SourceRecovery:
+    """One source-owned backlog. Only its first batch can probe the collector."""
+
+    def __init__(self):
+        self.condition = Condition()
+        self.pending = deque()
+        self.probing = False
+        self.deadline = 0
+        self.delay = 1
+        self.closing = False
+
+    def defer(self, batch, error, probe):
+        with self.condition:
+            if self.closing:
+                return False
+            if probe:
+                self.pending.appendleft((batch, error))
+                self.probing = False
+            else:
+                self.pending.append((batch, error))
+            if probe or not self.deadline:
+                self.deadline = time.monotonic() + self.delay
+                self.delay = min(60, self.delay * 2)
+            self.condition.notify_all()
+            return True
+
+    def next_probe(self):
+        with self.condition:
+            while self.probing or self.pending:
+                if self.probing:
+                    self.condition.wait()
+                    continue
+                remaining = self.deadline - time.monotonic()
+                if remaining > 0:
+                    self.condition.wait(remaining)
+                    continue
+                self.probing = True
+                batch, _ = self.pending.popleft()
+                return batch
+            return None
+
+    def hold_if_paused(self, batch):
+        with self.condition:
+            if self.closing or not (self.pending or self.probing):
+                return False
+            self.pending.append(
+                (batch, RuntimeError('Client closed during source recovery'))
+            )
+            return True
+
+    def finish_probe(self):
+        with self.condition:
+            self.probing = False
+            self.deadline = 0
+            self.delay = 1
+            self.condition.notify_all()
+
+    def close(self):
+        with self.condition:
+            self.closing = True
+            pending = self.pending
+            self.pending = deque()
+            self.condition.notify_all()
+            return pending
 
 
 class Consumer(Thread):
@@ -42,6 +110,7 @@ class Consumer(Thread):
         timeout=15,
         proxies=None,
         oauth_manager=None,
+        recovery=None,
     ):
         """Create a consumer thread."""
         Thread.__init__(self)
@@ -59,7 +128,7 @@ class Consumer(Thread):
         # run() *after* we set it to False in pause... and keep running
         # forever.
         self.running = True
-        self._paused = Event()
+        self.recovery = recovery or SourceRecovery()
         self.retries = retries
         self.timeout = timeout
         self.proxies = proxies
@@ -76,31 +145,56 @@ class Consumer(Thread):
     def pause(self):
         """Pause the consumer."""
         self.running = False
-        self._paused.set()
+        self.stop_recovery()
+
+    def stop_recovery(self):
+        for batch, error in self.recovery.close():
+            self.finish(batch, error)
+
+    def finish(self, batch, error=None):
+        if error:
+            self.log.error('error uploading: %s', error)
+            if self.on_error:
+                try:
+                    self.on_error(error, batch)
+                except Exception:
+                    self.log.exception('error in on_error callback')
+        for _ in batch:
+            self.queue.task_done()
 
     def upload(self):
         """Upload the next batch of items, return whether successful."""
-        success = False
-        batch = self.next()
-        if len(batch) == 0:
-            return False
-
+        batch = self.recovery.next_probe()
+        probe = batch is not None
+        if not probe:
+            if not self.running:
+                return False
+            batch = self.next()
+            if not batch:
+                return False
         try:
-            self.request(batch)
-            success = True
-        except Exception as e:
-            self.log.error('error uploading: %s', e)
+            if probe:
+                self.post(batch)
+            elif self.request(batch) is False:
+                return False
+        except Exception as error:
+            transient = isinstance(error, RequestException) or (
+                isinstance(error, APIError)
+                and (
+                    error.status in (401, 403, 404, 408, 429)
+                    or 500 <= error.status < 600
+                )
+            )
+            if transient and self.recovery.defer(batch, error, probe):
+                self.log.warning('Deferring batch after collector failure: %s', error)
+                return False
+            self.finish(batch, error)
             success = False
-            if self.on_error:
-                try:
-                    self.on_error(e, batch)
-                except Exception:
-                    # A raising callback must not kill the consumer thread.
-                    self.log.exception('error in on_error callback')
-        finally:
-            # mark items as acknowledged from queue
-            for _ in batch:
-                self.queue.task_done()
+        else:
+            self.finish(batch)
+            success = True
+        if probe:
+            self.recovery.finish_probe()
         return success
 
     def next(self):
@@ -149,29 +243,20 @@ class Consumer(Thread):
             backoff.expo, Exception, max_tries=self.retries + 1, giveup=fatal_exception
         )
         def send_request():
-            post(
-                self.write_key,
-                self.host,
-                gzip=self.gzip,
-                timeout=self.timeout,
-                batch=batch,
-                proxies=self.proxies,
-                oauth_manager=self.oauth_manager,
-            )
+            if self.recovery.hold_if_paused(batch):
+                return False
+            self.post(batch)
+            return True
 
-        delay = 1
-        while True:
-            try:
-                return send_request()
-            except APIError as exc:
-                if exc.status not in (401, 403, 404):
-                    raise
-                self.log.warning(
-                    'Collector returned HTTP %s. Check the write key and endpoint. '
-                    'Retrying in %s seconds.',
-                    exc.status,
-                    delay,
-                )
-                if self._paused.wait(delay):
-                    raise
-                delay = min(delay * 2, 60)
+        return send_request()
+
+    def post(self, batch):
+        post(
+            self.write_key,
+            self.host,
+            gzip=self.gzip,
+            timeout=self.timeout,
+            batch=batch,
+            proxies=self.proxies,
+            oauth_manager=self.oauth_manager,
+        )

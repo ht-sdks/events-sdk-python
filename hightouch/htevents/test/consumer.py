@@ -1,6 +1,7 @@
 import json
 import time
 import unittest
+from threading import Event
 
 import mock
 
@@ -205,19 +206,52 @@ class TestConsumer(unittest.TestCase):
                     )
 
     def test_configuration_failures_probe_the_original_batch(self):
-        consumer = Consumer(None, TEST_WRITE_KEY, retries=0)
-        failures = [APIError(status, 'unknown', '') for status in (401, 403, 404)]
+        queue = Queue()
+        queue.put({'messageId': 'original'})
+        consumer = Consumer(queue, TEST_WRITE_KEY, retries=0, upload_size=1)
+        failures = [APIError(status, 'unknown', '') for status in (503, 401, 403, 404)]
         with mock.patch(
             'hightouch.htevents.consumer.post', side_effect=failures + [None]
         ) as post:
-            with mock.patch.object(
-                consumer._paused, 'wait', return_value=False
-            ) as wait:
-                consumer.request([{'messageId': 'original'}])
-        self.assertEqual(
-            wait.call_args_list, [mock.call(1), mock.call(2), mock.call(4)]
-        )
-        self.assertEqual(post.call_args_list, [post.call_args] * 4)
+            for _ in failures:
+                self.assertFalse(consumer.upload())
+                self.assertEqual(queue.unfinished_tasks, 1)
+                consumer.recovery.deadline = 0
+            self.assertTrue(consumer.upload())
+        self.assertEqual(queue.unfinished_tasks, 0)
+        self.assertEqual(post.call_args_list, [post.call_args] * 5)
+
+    def test_workers_share_one_probe_and_close_reports_parked_batches(self):
+        queue = Queue()
+        errors = mock.Mock()
+        first = Consumer(queue, TEST_WRITE_KEY, retries=0, upload_size=1, on_error=errors)
+        other = Consumer(queue, TEST_WRITE_KEY, recovery=first.recovery, upload_size=1)
+        for name in ('first', 'second'):
+            queue.put({'messageId': name})
+        with mock.patch.object(first, 'post', side_effect=APIError(401, '', '')):
+            self.assertFalse(first.upload())
+        # A worker that already read a batch before rejection must park it.
+        self.assertFalse(other.request(other.next()))
+        first.recovery.deadline = 0
+        started, release = Event(), Event()
+
+        def probe(batch):
+            started.set()
+            release.wait(3)
+
+        with mock.patch.object(first, 'post', side_effect=probe) as post:
+            first.start()
+            try:
+                self.assertTrue(started.wait(2))
+                self.assertTrue(first.recovery.probing)
+                self.assertEqual(len(first.recovery.pending), 1)
+                first.pause()
+                errors.assert_called_once_with(mock.ANY, [{'messageId': 'second'}])
+            finally:
+                release.set()
+                first.join(3)
+        post.assert_called_once_with([{'messageId': 'first'}])
+        self.assertEqual(queue.unfinished_tasks, 0)
 
     def test_request_retry(self):
         # we should retry on general errors
