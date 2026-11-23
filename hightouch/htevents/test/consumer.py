@@ -224,7 +224,9 @@ class TestConsumer(unittest.TestCase):
     def test_workers_share_one_probe_and_close_reports_parked_batches(self):
         queue = Queue()
         errors = mock.Mock()
-        first = Consumer(queue, TEST_WRITE_KEY, retries=0, upload_size=1, on_error=errors)
+        first = Consumer(
+            queue, TEST_WRITE_KEY, retries=0, upload_size=1, on_error=errors
+        )
         other = Consumer(queue, TEST_WRITE_KEY, recovery=first.recovery, upload_size=1)
         for name in ('first', 'second'):
             queue.put({'messageId': name})
