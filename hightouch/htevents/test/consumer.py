@@ -205,11 +205,11 @@ class TestConsumer(unittest.TestCase):
                         'after %d retries' % consumer.retries
                     )
 
-    def test_configuration_failures_probe_the_original_batch(self):
+    def test_transient_failures_retry_the_original_batch(self):
         queue = Queue()
         queue.put({'messageId': 'original'})
         consumer = Consumer(queue, TEST_WRITE_KEY, retries=0, upload_size=1)
-        failures = [APIError(status, 'unknown', '') for status in (503, 401, 403, 404)]
+        failures = [APIError(status, 'unknown', '') for status in (503, 408, 429, 502)]
         with mock.patch(
             'hightouch.htevents.consumer.post', side_effect=failures + [None]
         ) as post:
@@ -230,7 +230,7 @@ class TestConsumer(unittest.TestCase):
         other = Consumer(queue, TEST_WRITE_KEY, recovery=first.recovery, upload_size=1)
         for name in ('first', 'second'):
             queue.put({'messageId': name})
-        with mock.patch.object(first, 'post', side_effect=APIError(401, '', '')):
+        with mock.patch.object(first, 'post', side_effect=APIError(503, '', '')):
             self.assertFalse(first.upload())
         # A worker that already read a batch before rejection must park it.
         self.assertFalse(other.request(other.next()))

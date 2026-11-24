@@ -180,10 +180,7 @@ class Consumer(Thread):
         except Exception as error:
             transient = isinstance(error, RequestException) or (
                 isinstance(error, APIError)
-                and (
-                    error.status in (401, 403, 404, 408, 429)
-                    or 500 <= error.status < 600
-                )
+                and (error.status in (408, 429) or 500 <= error.status < 600)
             )
             if transient and self.recovery.defer(batch, error, probe):
                 self.log.warning('Deferring batch after collector failure: %s', error)

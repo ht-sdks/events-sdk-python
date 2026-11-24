@@ -311,10 +311,10 @@ class TestClient(unittest.TestCase):
 
     @mock.patch(
         'hightouch.htevents.consumer.post',
-        side_effect=[APIError(401, 'auth', ''), None],
+        side_effect=[APIError(503, 'unavailable', ''), None],
     )
-    def test_flush_waits_for_source_recovery(self, post):
-        client = Client('original', on_error=self.fail)
+    def test_flush_waits_for_deferred_retry(self, post):
+        client = Client('original', max_retries=0, on_error=self.fail)
         try:
             accepted, msg = client.track('userId', 'event')
             client.flush()
