@@ -55,11 +55,8 @@ class SourceRecovery:
     def next_probe(self):
         with self.condition:
             while self.probing or self.pending:
-                if self.probing:
-                    self.condition.wait()
-                    continue
-                remaining = self.deadline - time.monotonic()
-                if remaining > 0:
+                remaining = None if self.probing else self.deadline - time.monotonic()
+                if remaining is None or remaining > 0:
                     self.condition.wait(remaining)
                     continue
                 self.probing = True
@@ -86,8 +83,7 @@ class SourceRecovery:
     def close(self):
         with self.condition:
             self.closing = True
-            pending = self.pending
-            self.pending = deque()
+            pending, self.pending = self.pending, deque()
             self.condition.notify_all()
             return pending
 
@@ -158,6 +154,7 @@ class Consumer(Thread):
                 try:
                     self.on_error(error, batch)
                 except Exception:
+                    # A raising callback must not kill the consumer thread.
                     self.log.exception('error in on_error callback')
         for _ in batch:
             self.queue.task_done()
