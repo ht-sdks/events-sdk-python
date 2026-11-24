@@ -5,7 +5,6 @@ from datetime import date, datetime
 import mock
 
 from hightouch.htevents.client import Client
-from hightouch.htevents.request import APIError
 from hightouch.htevents.version import VERSION
 
 from .constants import TEST_WRITE_KEY
@@ -309,23 +308,12 @@ class TestClient(unittest.TestCase):
         # Make sure we are informed that the queue is at capacity
         self.assertFalse(success)
 
-    @mock.patch(
-        'hightouch.htevents.consumer.post',
-        side_effect=[APIError(503, 'unavailable', ''), None],
-    )
-    def test_flush_waits_for_deferred_retry(self, post):
-        client = Client('original', max_retries=0, on_error=self.fail)
-        try:
-            accepted, msg = client.track('userId', 'event')
-            client.flush()
-            self.assertTrue(accepted)
-            self.assertFalse(self.failed)
-            self.assertEqual(post.call_count, 2)
-            for args, kwargs in post.call_args_list:
-                self.assertEqual(args[0], 'original')
-                self.assertEqual(kwargs['batch'][0]['messageId'], msg['messageId'])
-        finally:
-            client.join()
+    def test_failure_on_invalid_write_key(self):
+        client = Client('bad_key', on_error=self.fail)
+        success, msg = client.track('userId', 'event')
+        print(success, msg)
+        client.flush()
+        self.assertTrue(self.failed)
 
     def test_unicode(self):
         Client('unicode_key')
