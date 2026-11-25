@@ -290,13 +290,11 @@ class TestClient(unittest.TestCase):
         for consumer in client.consumers:
             self.assertFalse(consumer.is_alive())
 
-    @mock.patch(
-        'hightouch.htevents.consumer.post',
-        side_effect=[APIError(503, 'outage', ''), None],
-    )
-    def test_public_shutdown_releases_deferred_event(self, post):
+    def test_public_shutdown_releases_deferred_event(self):
         on_error = mock.Mock()
         client = Client(TEST_WRITE_KEY, upload_size=1, max_retries=0, on_error=on_error)
+        post = mock.Mock(side_effect=[APIError(503, 'outage', ''), None])
+        client.consumers[0].post = post
         with mock.patch.object(htevents, 'default_client', client):
             _, event = client.track('user', 'event')
             with client.recovery.condition:
