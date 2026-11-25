@@ -111,12 +111,12 @@ class Client(object):
             if send:
                 atexit.register(self.join)
             self.consumers = []
-            recovery = SourceRecovery()
+            self.recovery = SourceRecovery()
             for _ in range(thread):
                 consumer = Consumer(
                     self.queue,
                     write_key,
-                    recovery=recovery,
+                    recovery=self.recovery,
                     host=host,
                     on_error=on_error,
                     upload_size=upload_size,
@@ -382,7 +382,7 @@ class Client(object):
             return True, msg
 
         try:
-            self.queue.put(msg, block=False)
+            self.recovery.enqueue(self.queue, msg)
             self.log.debug('enqueued %s.', msg['type'])
             return True, msg
         except queue.Full:

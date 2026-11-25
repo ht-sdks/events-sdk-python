@@ -221,6 +221,40 @@ class TestConsumer(unittest.TestCase):
         self.assertEqual(queue.unfinished_tasks, 0)
         self.assertEqual(post.call_args_list, [post.call_args] * 5)
 
+    def test_healthy_batch_passes_failed_probe_after_source_cooldown(self):
+        queue = Queue(2)
+        consumer = Consumer(queue, TEST_WRITE_KEY, retries=0, upload_size=1)
+        recovery = consumer.recovery
+        a, b = {'messageId': 'A'}, {'messageId': 'B'}
+        recovery.enqueue(queue, a)
+        with mock.patch.object(
+            consumer,
+            'post',
+            side_effect=[APIError(503, '', ''), APIError(429, '', ''), None, None],
+        ) as post, mock.patch(
+            'hightouch.htevents.consumer.time.monotonic', return_value=10
+        ) as clock:
+            self.assertFalse(consumer.upload())
+            clock.return_value = 11
+            self.assertFalse(consumer.upload())
+            recovery.enqueue(queue, b)
+
+            def wait_for_deadline(remaining):
+                self.assertEqual(remaining, 2)
+                self.assertEqual(post.call_count, 2)
+                clock.return_value += remaining
+
+            with mock.patch.object(
+                recovery.condition, 'wait', side_effect=wait_for_deadline
+            ) as wait:
+                self.assertTrue(consumer.upload())
+                wait.assert_called_once()
+            self.assertTrue(consumer.upload())
+        self.assertEqual(
+            post.call_args_list, [mock.call([event]) for event in (a, a, b, a)]
+        )
+        self.assertEqual(queue.unfinished_tasks, 0)
+
     def test_workers_share_one_probe_and_close_reports_parked_batches(self):
         queue = Queue()
         errors = mock.Mock()

@@ -2,7 +2,7 @@ import json
 import logging
 import time
 from collections import deque
-from queue import Empty
+from queue import Empty, Full
 from threading import Condition, Thread
 
 import backoff
@@ -27,7 +27,7 @@ class FatalError(Exception):
 
 
 class SourceRecovery:
-    """One source-owned backlog. Only its first batch can probe the collector."""
+    """Coordinate delivery turns and backoff across consumers of the same source."""
 
     def __init__(self):
         self.condition = Condition()
@@ -36,36 +36,55 @@ class SourceRecovery:
         self.deadline = 0
         self.delay = 1
         self.closing = False
+        self.closed_during_recovery = False
+        self.prefer_fresh = False
+
+    def enqueue(self, queue, item):
+        with self.condition:
+            if (
+                (self.pending or self.probing)
+                and queue.maxsize > 0
+                and queue.unfinished_tasks >= queue.maxsize
+            ):
+                raise Full
+            queue.put_nowait(item)
 
     def defer(self, batch, error, probe):
         with self.condition:
             if self.closing:
                 return False
+            self.pending.append((batch, error))
             if probe:
-                self.pending.appendleft((batch, error))
                 self.probing = False
-            else:
-                self.pending.append((batch, error))
             if probe or not self.deadline:
                 self.deadline = time.monotonic() + self.delay
                 self.delay = min(60, self.delay * 2)
             self.condition.notify_all()
             return True
 
-    def next_probe(self):
+    def next_probe(self, next_fresh):
         with self.condition:
             while self.probing or self.pending:
                 remaining = None if self.probing else self.deadline - time.monotonic()
                 if remaining is None or remaining > 0:
                     self.condition.wait(remaining)
                     continue
+                if self.prefer_fresh:
+                    batch = next_fresh(block=False)
+                    if batch:
+                        self.probing = True
+                        self.prefer_fresh = False
+                        return batch
                 self.probing = True
+                self.prefer_fresh = True
                 batch, _ = self.pending.popleft()
                 return batch
             return None
 
     def hold_if_paused(self, batch):
         with self.condition:
+            if self.closed_during_recovery:
+                raise FatalError('Client closed during source recovery')
             if self.closing or not (self.pending or self.probing):
                 return False
             self.pending.append(
@@ -82,6 +101,8 @@ class SourceRecovery:
 
     def close(self):
         with self.condition:
+            if not self.closing:
+                self.closed_during_recovery = bool(self.pending or self.probing)
             self.closing = True
             pending, self.pending = self.pending, deque()
             self.condition.notify_all()
@@ -161,7 +182,7 @@ class Consumer(Thread):
 
     def upload(self):
         """Upload the next batch of items, return whether successful."""
-        batch = self.recovery.next_probe()
+        batch = self.recovery.next_probe(self.next)
         probe = batch is not None
         if not probe:
             if not self.running:
@@ -191,7 +212,7 @@ class Consumer(Thread):
             self.recovery.finish_probe()
         return success
 
-    def next(self):
+    def next(self, block=True):
         """Return the next batch of items to upload."""
         queue = self.queue
         items = []
@@ -204,7 +225,7 @@ class Consumer(Thread):
             if elapsed >= self.upload_interval:
                 break
             try:
-                item = queue.get(block=True, timeout=self.upload_interval - elapsed)
+                item = queue.get(block=block, timeout=self.upload_interval - elapsed)
                 item_size = len(json.dumps(item, cls=DatetimeSerializer).encode())
                 if item_size > MAX_MSG_SIZE:
                     self.log.error('Item exceeds 32kb limit, dropping. (%s)', str(item))
