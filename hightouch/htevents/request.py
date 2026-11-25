@@ -83,6 +83,10 @@ def post(
         payload = res.json()
         log.debug('received response: %s', payload)
         raise APIError(res.status_code, payload['code'], payload['message'])
+    except (KeyError, TypeError):
+        if res.status_code in (408, 429) or 500 <= res.status_code < 600:
+            raise APIError(res.status_code, 'unknown', res.text)
+        raise
     except ValueError:
         log.error('Unknown error: [%s] %s', res.status_code, res.reason)
         raise APIError(res.status_code, 'unknown', res.text)

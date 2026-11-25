@@ -136,10 +136,7 @@ class Consumer(Thread):
 
         def fatal_exception(exc):
             if isinstance(exc, APIError):
-                # retry on server errors and client errors
-                # with 429 status code (rate limited),
-                # don't retry on other client errors
-                return (400 <= exc.status < 500) and exc.status != 429
+                return 400 <= exc.status < 500 and exc.status not in (408, 429)
             elif isinstance(exc, FatalError):
                 return True
             else:

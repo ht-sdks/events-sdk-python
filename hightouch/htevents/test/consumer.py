@@ -215,6 +215,8 @@ class TestConsumer(unittest.TestCase):
             consumer, APIError(500, 'code', 'Internal Server Error'), 2
         )
 
+        self._test_request_retry(consumer, APIError(408, 'code', 'Request Timeout'), 1)
+
         # we should retry on HTTP 429 errors
         consumer = Consumer(None, TEST_WRITE_KEY)
         self._test_request_retry(
