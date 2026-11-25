@@ -4,6 +4,7 @@ from datetime import date, datetime
 
 import mock
 
+from hightouch import htevents
 from hightouch.htevents.client import Client
 from hightouch.htevents.request import APIError
 from hightouch.htevents.version import VERSION
@@ -288,6 +289,27 @@ class TestClient(unittest.TestCase):
         self.assertTrue(client.queue.empty())
         for consumer in client.consumers:
             self.assertFalse(consumer.is_alive())
+
+    @mock.patch(
+        'hightouch.htevents.consumer.post',
+        side_effect=[APIError(503, 'outage', ''), None],
+    )
+    def test_public_shutdown_releases_deferred_event(self, post):
+        on_error = mock.Mock()
+        client = Client(TEST_WRITE_KEY, upload_size=1, max_retries=0, on_error=on_error)
+        with mock.patch.object(htevents, 'default_client', client):
+            _, event = client.track('user', 'event')
+            with client.recovery.condition:
+                self.assertTrue(
+                    client.recovery.condition.wait_for(
+                        lambda: client.recovery.pending, 3
+                    )
+                )
+            htevents.shutdown()
+        on_error.assert_called_once()
+        self.assertEqual(on_error.call_args[0][1][0]['messageId'], event['messageId'])
+        self.assertEqual(post.call_count, 1)
+        self.assertEqual(client.queue.unfinished_tasks, 0)
 
     def test_synchronous(self):
         client = Client(TEST_WRITE_KEY, sync_mode=True)
