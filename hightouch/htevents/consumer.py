@@ -74,15 +74,11 @@ class SourceRecovery:
                 if remaining is None or remaining > 0:
                     self.condition.wait(remaining)
                     continue
-                if self.prefer_fresh:
-                    batch = next_fresh(block=False)
-                    if batch:
-                        self.probing = True
-                        self.prefer_fresh = False
-                        return batch
+                batch = next_fresh(block=False) if self.prefer_fresh else None
+                self.prefer_fresh = not batch
+                if not batch:
+                    batch, _ = self.pending.popleft()
                 self.probing = True
-                self.prefer_fresh = True
-                batch, _ = self.pending.popleft()
                 return batch
             return None
 
