@@ -4,6 +4,7 @@ import unittest
 from threading import Event
 
 import mock
+from requests.exceptions import InvalidSchema, Timeout
 
 try:
     from queue import Queue
@@ -205,11 +206,34 @@ class TestConsumer(unittest.TestCase):
                         'after %d retries' % consumer.retries
                     )
 
+    def test_invalid_collector_url_finishes_without_deferral(self):
+        queue = Queue()
+        item = {'messageId': 'original'}
+        queue.put(item)
+        failed = mock.Mock()
+        consumer = Consumer(
+            queue,
+            TEST_WRITE_KEY,
+            host='unsupported://collector',
+            retries=0,
+            upload_size=1,
+            on_error=failed,
+        )
+        self.assertFalse(consumer.upload())
+        self.assertEqual(queue.unfinished_tasks, 0)
+        self.assertFalse(consumer.recovery.pending)
+        self.assertEqual(failed.call_count, 1)
+        error, batch = failed.call_args[0]
+        self.assertIsInstance(error, InvalidSchema)
+        self.assertEqual(batch, [item])
+
     def test_transient_failures_retry_the_original_batch(self):
         queue = Queue()
         queue.put({'messageId': 'original'})
         consumer = Consumer(queue, TEST_WRITE_KEY, retries=0, upload_size=1)
-        failures = [APIError(status, 'unknown', '') for status in (503, 408, 429, 502)]
+        failures = [
+            APIError(status, 'unknown', '') for status in (503, 408, 429, 502)
+        ] + [Timeout()]
         with mock.patch(
             'hightouch.htevents.consumer.post', side_effect=failures + [None]
         ) as post:
@@ -219,7 +243,7 @@ class TestConsumer(unittest.TestCase):
                 consumer.recovery.deadline = 0
             self.assertTrue(consumer.upload())
         self.assertEqual(queue.unfinished_tasks, 0)
-        self.assertEqual(post.call_args_list, [post.call_args] * 5)
+        self.assertEqual(post.call_args_list, [post.call_args] * (len(failures) + 1))
 
     def test_healthy_batch_passes_failed_probe_after_source_cooldown(self):
         queue = Queue(2)

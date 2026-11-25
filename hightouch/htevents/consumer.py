@@ -6,7 +6,12 @@ from queue import Empty, Full
 from threading import Condition, Thread
 
 import backoff
-from requests import RequestException
+from requests.exceptions import (
+    ChunkedEncodingError,
+    ConnectionError,
+    ContentDecodingError,
+    Timeout,
+)
 
 from hightouch.htevents.request import APIError, DatetimeSerializer, post
 
@@ -196,7 +201,10 @@ class Consumer(Thread):
             elif self.request(batch) is False:
                 return False
         except Exception as error:
-            transient = isinstance(error, RequestException) or (
+            transient = isinstance(
+                error,
+                (ConnectionError, Timeout, ChunkedEncodingError, ContentDecodingError),
+            ) or (
                 isinstance(error, APIError)
                 and (error.status in (408, 429) or 500 <= error.status < 600)
             )
