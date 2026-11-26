@@ -5,17 +5,51 @@ import unittest
 import mock
 
 try:
-    from queue import Queue
+    from queue import Full, Queue
 except ImportError:
-    from Queue import Queue
+    from Queue import Full, Queue
 
-from hightouch.htevents.consumer import MAX_MSG_SIZE, Consumer
+from hightouch.htevents.consumer import MAX_MSG_SIZE, Consumer, DeliveryQueue
 from hightouch.htevents.request import APIError
 
 from .constants import TEST_WRITE_KEY
 
 
 class TestConsumer(unittest.TestCase):
+    def test_deferred_batches_share_capacity_and_wait_their_turn(self):
+        q = DeliveryQueue(2)
+        c = Consumer(q, 'test', upload_size=1, retries=1)
+        a, b = {'messageId': 'A'}, {'messageId': 'B'}
+        unavailable = APIError(503, 'unavailable', '')
+        q.put(a)
+        outcomes = iter([unavailable] * 3 + [None, None])
+
+        def post(*args, **kwargs):
+            outcome = next(outcomes)
+            if send.call_count == 3:
+                q.put_nowait(b)
+                with self.assertRaises(Full):
+                    q.put_nowait({'messageId': 'C'})
+            if outcome:
+                raise outcome
+
+        with mock.patch('hightouch.htevents.consumer.post', side_effect=post) as send:
+            with mock.patch('time.sleep'), mock.patch(
+                'time.monotonic', return_value=0
+            ) as clock:
+                self.assertFalse(c.upload())
+                q.join_eligible()
+                clock.return_value = 1
+                self.assertFalse(c.upload())
+                self.assertTrue(c.upload())
+                clock.return_value = 2
+                self.assertTrue(c.upload())
+        self.assertEqual(
+            [call[1]['batch'] for call in send.call_args_list],
+            [[a], [a], [a], [b], [a]],
+        )
+        q.join()
+
     def test_next(self):
         q = Queue()
         consumer = Consumer(q, '')

@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from dateutil.tz import tzutc
 
-from hightouch.htevents.consumer import MAX_MSG_SIZE, Consumer
+from hightouch.htevents.consumer import MAX_MSG_SIZE, Consumer, DeliveryQueue
 from hightouch.htevents.oauth_manager import OauthManager
 from hightouch.htevents.request import DatetimeSerializer, post
 from hightouch.htevents.utils import clean, guess_timezone
@@ -68,7 +68,7 @@ class Client(object):
     ):
         require('write_key', write_key, str)
 
-        self.queue = queue.Queue(max_queue_size)
+        self.queue = DeliveryQueue(max_queue_size)
         self.write_key = write_key
         self.on_error = on_error
         self.debug = debug
@@ -110,8 +110,8 @@ class Client(object):
             # to call flush().
             if send:
                 atexit.register(self.join)
+            self.consumers = []
             for _ in range(thread):
-                self.consumers = []
                 consumer = Consumer(
                     self.queue,
                     write_key,
@@ -391,7 +391,7 @@ class Client(object):
         """Forces a flush from the internal queue to the server"""
         queue = self.queue
         size = queue.qsize()
-        queue.join()
+        queue.join_eligible()
         # Note that this message may not be precise, because of threading.
         self.log.debug('successfully flushed about %s items.', size)
 
@@ -399,6 +399,7 @@ class Client(object):
         """Ends the consumer thread once the queue is empty.
         Blocks execution until finished
         """
+        self._close_recovery()
         for consumer in self.consumers:
             consumer.pause()
             try:
@@ -409,8 +410,13 @@ class Client(object):
 
     def shutdown(self):
         """Flush all messages and cleanly shutdown the client"""
+        self._close_recovery()
         self.flush()
         self.join()
+
+    def _close_recovery(self):
+        for _, batch, error in self.queue.close_recovery():
+            self.consumers[0].finish(batch, error)
 
 
 def require(name, field, data_type):

@@ -1,10 +1,17 @@
 import json
 import logging
 import time
-from queue import Empty
+from collections import deque
+from queue import Empty, Full, Queue
 from threading import Thread
 
 import backoff
+from requests.exceptions import (
+    ChunkedEncodingError,
+    ConnectionError,
+    ContentDecodingError,
+    Timeout,
+)
 
 from hightouch.htevents.request import APIError, DatetimeSerializer, post
 
@@ -22,6 +29,69 @@ class FatalError(Exception):
     def __str__(self):
         msg = '[Hightouch] {0})'
         return msg.format(self.message)
+
+
+class DeliveryQueue(Queue):
+    """Fresh events and deferred batches share the configured waiting capacity."""
+
+    def __init__(self, maxsize):
+        super().__init__(maxsize)
+        self.deferred = deque()
+        self.deferred_size = 0
+        self.reserved_size = 0  # Includes deferred batches currently being uploaded.
+        self.closing = False
+
+    def _put(self, item):
+        if self.maxsize > 0 and len(self.queue) + self.reserved_size >= self.maxsize:
+            raise Full
+        super()._put(item)
+
+    def defer(self, batch, error, delay, reserved):
+        with self.mutex:
+            new_slots = 0 if reserved else len(batch)
+            size = len(self.queue) + self.reserved_size + new_slots
+            if self.closing or (self.maxsize > 0 and size > self.maxsize):
+                return False
+            self.deferred.append((time.monotonic() + delay, batch, error))
+            self.reserved_size += new_slots
+            self.deferred_size += len(batch)
+            self.all_tasks_done.notify_all()
+            return True
+
+    def take_deferred(self, prefer_fresh):
+        with self.mutex:
+            if prefer_fresh and self.queue:
+                return None
+            if self.deferred and self.deferred[0][0] <= time.monotonic():
+                _, batch, _ = self.deferred.popleft()
+                self.deferred_size -= len(batch)
+                return batch
+            return None
+
+    def release(self, batch):
+        with self.mutex:
+            self.reserved_size -= len(batch)
+
+    def join_eligible(self):
+        with self.all_tasks_done:
+            self.all_tasks_done.wait_for(
+                lambda: self.unfinished_tasks == self.deferred_size
+                and (not self.deferred or self.deferred[0][0] > time.monotonic())
+            )
+
+    def task_done(self):
+        super().task_done()
+        with self.all_tasks_done:
+            if self.unfinished_tasks == self.deferred_size:
+                self.all_tasks_done.notify_all()
+
+    def close_recovery(self):
+        with self.mutex:
+            self.closing = True
+            pending, self.deferred = self.deferred, deque()
+            self.reserved_size -= self.deferred_size
+            self.deferred_size = 0
+            return pending
 
 
 class Consumer(Thread):
@@ -59,6 +129,7 @@ class Consumer(Thread):
         # run() *after* we set it to False in pause... and keep running
         # forever.
         self.running = True
+        self.prefer_fresh = False
         self.retries = retries
         self.timeout = timeout
         self.proxies = proxies
@@ -78,28 +149,54 @@ class Consumer(Thread):
 
     def upload(self):
         """Upload the next batch of items, return whether successful."""
-        success = False
-        batch = self.next()
-        if len(batch) == 0:
+        recovery = self.queue if isinstance(self.queue, DeliveryQueue) else None
+        batch = (
+            recovery.take_deferred(self.prefer_fresh) if recovery is not None else None
+        )
+        probe = self.prefer_fresh = batch is not None
+        if batch is None:
+            batch = self.next()
+        if not batch:
             return False
 
         try:
-            self.request(batch)
-            success = True
-        except Exception as e:
-            self.log.error('error uploading: %s', e)
-            success = False
+            if probe:
+                self.post(batch)
+            else:
+                self.request(batch)
+        except Exception as error:
+            transient = isinstance(
+                error,
+                (ConnectionError, Timeout, ChunkedEncodingError, ContentDecodingError),
+            ) or (
+                isinstance(error, APIError)
+                and (error.status in (408, 429) or 500 <= error.status < 600)
+            )
+            if (
+                transient
+                and recovery is not None
+                and recovery.defer(batch, error, self.upload_interval, reserved=probe)
+            ):
+                return False
+            if probe:
+                recovery.release(batch)
+            self.finish(batch, error)
+            return False
+        if probe:
+            recovery.release(batch)
+        self.finish(batch)
+        return True
+
+    def finish(self, batch, error=None):
+        if error is not None:
+            self.log.error('error uploading: %s', error)
             if self.on_error:
                 try:
-                    self.on_error(e, batch)
+                    self.on_error(error, batch)
                 except Exception:
-                    # A raising callback must not kill the consumer thread.
                     self.log.exception('error in on_error callback')
-        finally:
-            # mark items as acknowledged from queue
-            for _ in batch:
-                self.queue.task_done()
-        return success
+        for _ in batch:
+            self.queue.task_done()
 
     def next(self):
         """Return the next batch of items to upload."""
@@ -147,14 +244,17 @@ class Consumer(Thread):
             backoff.expo, Exception, max_tries=self.retries + 1, giveup=fatal_exception
         )
         def send_request():
-            post(
-                self.write_key,
-                self.host,
-                gzip=self.gzip,
-                timeout=self.timeout,
-                batch=batch,
-                proxies=self.proxies,
-                oauth_manager=self.oauth_manager,
-            )
+            self.post(batch)
 
         send_request()
+
+    def post(self, batch):
+        post(
+            self.write_key,
+            self.host,
+            gzip=self.gzip,
+            timeout=self.timeout,
+            batch=batch,
+            proxies=self.proxies,
+            oauth_manager=self.oauth_manager,
+        )
